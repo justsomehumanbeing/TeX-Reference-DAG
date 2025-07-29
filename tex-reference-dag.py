@@ -28,9 +28,10 @@ import re
 import argparse
 import networkx as nx
 import sys
+from typing import Dict, List, Optional, Tuple
 
 
-def parse_aux(aux_path):
+def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     r"""
     Read the .aux file and extract all \newlabel definitions.
     \newlabel{<label>}{{<number>}{...}}
@@ -39,7 +40,7 @@ def parse_aux(aux_path):
       label_to_num: dict mapping label names (str) to tuples of ints,
                     e.g. "lem:foo" -> (1, 5)
     """
-    label_to_num = {}
+    label_to_num: Dict[str, Tuple[int, ...]] = {}
     # Regex to look for '\newlabel{LABEL}{{NUMBERS}'
     pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)\}")
 
@@ -65,7 +66,7 @@ def parse_aux(aux_path):
     return label_to_num
 
 
-def parse_refs(tex_paths, ref_cmds):
+def parse_refs(tex_paths: List[str], ref_cmds: List[str]) -> List[Tuple[str, str]]:
     r"""
     Search all .tex files for:
      1) \label{...} commands => position in the text + label name
@@ -76,7 +77,7 @@ def parse_refs(tex_paths, ref_cmds):
     Returns:
       edges: List[Tuple[src_label, target_label]]
     """
-    edges = []
+    edges: List[Tuple[str, str]] = []
 
     # Label regex: finds all \label{...}
     label_pattern = re.compile(r"\\label\{([^}]+)\}")
@@ -91,13 +92,15 @@ def parse_refs(tex_paths, ref_cmds):
 
         # 1) Collect all labels with their position
         #    .start() gives the index in the string; we store (position, label_name)
-        labels = [(m.start(), m.group(1)) for m in label_pattern.finditer(content)]
+        labels: List[Tuple[int, str]] = [
+            (m.start(), m.group(1)) for m in label_pattern.finditer(content)
+        ]
         # Sort explicitly by position (not lexicographically!)
         labels.sort(key=lambda x: x[0])
         # Labels are now ordered as they appear in the text.
 
         # 2) Collect all references
-        refs = []  # list of (position, target_label)
+        refs: List[Tuple[int, str]] = []  # list of (position, target_label)
         for cmd in ref_cmds:
             # Build a regex for each macro: e.g. r"\\reflem\{([^}]+)\}" matches \reflem{foo}
             pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
@@ -123,7 +126,10 @@ def parse_refs(tex_paths, ref_cmds):
     return edges
 
 
-def check_violations(edges, label_to_num):
+def check_violations(
+    edges: List[Tuple[str, str]],
+    label_to_num: Dict[str, Tuple[int, ...]],
+) -> List[Tuple[str, str, Tuple[int, ...], Tuple[int, ...]]]:
     """
     For each edge (src -> trg) check whether the number of ``trg`` is less than the number of ``src``.
     If this is not the case, the DAG order is violated.
@@ -131,7 +137,7 @@ def check_violations(edges, label_to_num):
     Returns:
       violations: List[Tuple[src, trg, num(src), num(trg)]]
     """
-    violations = []
+    violations: List[Tuple[str, str, Tuple[int, ...], Tuple[int, ...]]] = []
     for src, trg in edges:
         if src in label_to_num and trg in label_to_num:
             num_src = label_to_num[src]
@@ -142,7 +148,10 @@ def check_violations(edges, label_to_num):
     return violations
 
 
-def suggest_reordering(edges, label_to_num):
+def suggest_reordering(
+    edges: List[Tuple[str, str]],
+    label_to_num: Dict[str, Tuple[int, ...]],
+) -> Optional[List[str]]:
     """
     Build a NetworkX DiGraph from all labels and edges.
     Check for cycles:
@@ -166,7 +175,7 @@ def suggest_reordering(edges, label_to_num):
     return topo_order
 
 
-def main():
+def main() -> None:
     # Set up the CLI parser
     parser = argparse.ArgumentParser(
         description="Check dependencies between lemmas/theorems and their numbering."
