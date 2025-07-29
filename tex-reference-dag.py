@@ -178,13 +178,17 @@ def draw_section_graphs(
     aux_path: str,
     tex_paths: list[str],
     ref_cmds: list[str],
-    output_dir: str
+    output_dir: str,
+    *,
+    draw_each_section: bool = True,
+    draw_collapsed: bool = True,
 ) -> None:
     """
-    Draws:
-      1) The collapsed section-level DAG (nodes = sections)
-      2) For each section, the sub-DAG of labels in that section
-    Outputs TikZ files into output_dir.
+    Draw graphs of the dependency structure.
+    Parameters control which graphs are produced:
+      - draw_collapsed: draw a DAG where each node represents a section.
+      - draw_each_section: draw a DAG for each individual section.
+    The resulting TikZ files are written into ``output_dir``.
     """
     # Prepare output directory
     os.makedirs(output_dir, exist_ok=True)
@@ -198,25 +202,37 @@ def draw_section_graphs(
     full_G.add_nodes_from(label_to_num.keys())
     full_G.add_edges_from(edges)
 
-    # 1) Collapsed graph at section granularity (level=1)
-    sec_rep = rep_creator(1)
-    H_secs = collapse_graph(full_G, sec_rep)
-    export_to_tikz(H_secs, name, os.path.join(output_dir, "collapsed_sections.tex"))
+    if draw_collapsed:
+        # 1) Collapsed graph at section granularity (level=1)
+        sec_rep = rep_creator(1)
+        H_secs = collapse_graph(full_G, sec_rep)
+        export_to_tikz(
+            H_secs,
+            name,
+            os.path.join(output_dir, "collapsed_sections.tex"),
+        )
 
-    # 2) Section-specific subgraphs
-    # Determine unique sections
-    sections = sorted({nums[0] for nums in label_to_num.values()})
-    for sec in sections:
-        # Nodes in this section
-        sec_nodes = [lbl for lbl, nums in label_to_num.items() if nums[0] == sec]
-        # Build MultiDiGraph for subgraph
-        sub_H = nx.MultiDiGraph()
-        for u, v in edges:
-            if u in sec_nodes and v in sec_nodes:
-                sub_H.add_edge(u, v)
-        # Export
-        filename = f"section_{sec}.tex"
-        export_to_tikz(sub_H, name, os.path.join(output_dir, filename))
+    if draw_each_section:
+        # 2) Section-specific subgraphs
+        # Determine unique sections
+        sections = sorted({nums[0] for nums in label_to_num.values()})
+        for sec in sections:
+            # Nodes in this section
+            sec_nodes = [
+                lbl for lbl, nums in label_to_num.items() if nums[0] == sec
+            ]
+            # Build MultiDiGraph for subgraph
+            sub_H = nx.MultiDiGraph()
+            for u, v in edges:
+                if u in sec_nodes and v in sec_nodes:
+                    sub_H.add_edge(u, v)
+            # Export
+            filename = f"section_{sec}.tex"
+            export_to_tikz(
+                sub_H,
+                name,
+                os.path.join(output_dir, filename),
+            )
 
 
 def main() -> None:
@@ -232,6 +248,16 @@ def main() -> None:
     )
     parser.add_argument(
         '--draw-dir', default='graphs', help='Output directory for TikZ graphs'
+    )
+    parser.add_argument(
+        '--draw-each-section',
+        action='store_true',
+        help='Write a TikZ graph for every section',
+    )
+    parser.add_argument(
+        '--draw-collapsed-sections',
+        action='store_true',
+        help='Write a section-level DAG where nodes represent sections',
     )
     args = parser.parse_args()
 
@@ -262,6 +288,16 @@ def main() -> None:
         for label in topo:
             num = label_to_num.get(label, ())
             print(f"  – {label}: {'.'.join(map(str, num))}")
+
+    if args.draw_each_section or args.draw_collapsed_sections:
+        draw_section_graphs(
+            args.aux,
+            args.tex,
+            args.refs,
+            args.draw_dir,
+            draw_each_section=args.draw_each_section,
+            draw_collapsed=args.draw_collapsed_sections,
+        )
 
 
 if __name__ == '__main__':

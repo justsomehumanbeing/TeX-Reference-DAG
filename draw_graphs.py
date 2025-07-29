@@ -24,7 +24,7 @@ This script is heavily commented to ensure understandability.
 """
 
 import networkx as nx
-from typing import TypeVar, Callable, Hashable, Any, Tuple
+from typing import TypeVar, Callable, Hashable, Any, Tuple, Dict
 
 # Type variables for generic node and group types
 Node = TypeVar('Node')
@@ -124,8 +124,8 @@ def export_to_tikz(
         # Edges
         for u, v in H.edges():
             mult = H.number_of_edges(u, v)
-            if mult = 0:
-                break
+            if mult == 0:
+                continue
             width = 0.5 + 0.2*(mult-1)
             f.write(
                 f"  \\draw[line width={width:.2f}pt] "
