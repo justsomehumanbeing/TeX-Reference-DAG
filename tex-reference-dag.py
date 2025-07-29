@@ -14,10 +14,11 @@ Zusätzliche Kommentare helfen dir, jeden Schritt nachzuvollziehen.
 import re
 import argparse
 import networkx as nx
+import sys
 
 
 def parse_aux(aux_path):
-    """
+    r"""
     Liest die .aux-Datei ein und extrahiert alle \newlabel-Definitionen.
     \newlabel{<label>}{{<nummer>}{...}}
 
@@ -30,24 +31,27 @@ def parse_aux(aux_path):
     pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)\}")
 
     # Zeile für Zeile einlesen
-    with open(aux_path, encoding='utf-8') as f:
-        for line in f:
-            match = pattern.search(line)
-            if not match:
-                continue
-
-            label = match.group(1)
-            num_str = match.group(2)
-            # Splitte "1.5.2" -> ["1","5","2"], wandle in ints
-            nums = tuple(int(n) for n in num_str.split('.'))
-            label_to_num[label] = nums
-            # Debug: print(f"Gefundenes Label: {label} -> Nummer {nums}")
+    try:
+        with open(aux_path, encoding='utf-8') as f:
+            for line in f:
+                match = pattern.search(line)
+                if not match:
+                    continue
+                label = match.group(1)
+                num_str = match.group(2)
+                # Splitte "1.5.2" -> ["1","5","2"], wandle in ints
+                nums = tuple(int(n) for n in num_str.split('.'))
+                label_to_num[label] = nums
+                # Debug: print(f"Gefundenes Label: {label} -> Nummer {nums}")
+    except OSError as exc:
+        print(f"Error reading {aux_path}: {exc}", file=sys.stderr)
+        return {}
 
     return label_to_num
 
 
 def parse_refs(tex_paths, ref_cmds):
-    """
+    r"""
     Durchsucht alle .tex-Dateien nach:
      1) \label{...}-Befehlen => Position im Text + Label-Name
      2) Referenz-Makros (z.B. \reflem{...}) => Position im Text + Ziel-Label
@@ -64,7 +68,12 @@ def parse_refs(tex_paths, ref_cmds):
     label_pattern = re.compile(r"\\label\{([^}]+)\}")
 
     for tex_path in tex_paths:
-        content = open(tex_path, encoding='utf-8').read()
+        try:
+            with open(tex_path, encoding='utf-8') as f:
+                content = f.read()
+        except OSError as exc:
+            print(f"Could not read {tex_path}: {exc}", file=sys.stderr)
+            continue
 
         # 1) Alle Labels mit ihrer Position sammeln
         #    .start() liefert den Index im String, wir speichern (position, label_name)
@@ -77,7 +86,7 @@ def parse_refs(tex_paths, ref_cmds):
         refs = []  # Liste von (position, target_label)
         for cmd in ref_cmds:
             # Baue Regex für jedes Makro: z.B. r"\\reflem\{([^}]+)\}" findet \reflem{foo}
-            pat = re.compile(cmd + r"\{([^}]+)\}")
+            pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
             for m in pat.finditer(content):
                 refs.append((m.start(), m.group(1)))
         # Auch hier sortieren nach Position
@@ -172,8 +181,8 @@ def main():
         print("⚠️ Verletzungen der Reihenfolge gefunden:")
         for src, trg, num_src, num_trg in violations:
             print(
-                f"  • {src} (#{'.'.join(map(str,num_src))}) nutzt "
-                f"{trg} (#{'.'.join(map(str,num_trg))}) und bricht die DAG-Reihenfolge."
+                f"  • {src} (#{'.'.join(map(str, num_src))}) nutzt "
+                f"{trg} (#{'.'.join(map(str, num_trg))}) und bricht die DAG-Reihenfolge."
             )
     else:
         print("✅ Keine Verletzungen: Die Nummerierung respektiert den Abhängigkeits-DAG.")
@@ -186,7 +195,7 @@ def main():
         print("\n💡 Vorschlag für eine topologische Nummerierung (Label in Abhängigkeitsreihenfolge):")
         for label in topo:
             num = label_to_num.get(label, ())
-            print(f"  – {label}: {'.'.join(map(str,num))}")
+            print(f"  – {label}: {'.'.join(map(str, num))}")
 
 
 if __name__ == '__main__':
