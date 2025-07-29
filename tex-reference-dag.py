@@ -1,4 +1,17 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# (c) 2025 Lino Joss Fidel Haupt
+#
+# TeX-Reference-DAG – LaTeX dependency checker
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the LICENSE and COPYING files for details.
+
+
 # -*- coding: utf-8 -*-
 """
 tex-reference-dag.py
