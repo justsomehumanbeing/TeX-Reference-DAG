@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-dependency_checker.py
+tex-reference-dag.py
 
-A script that reads LaTeX .aux and .tex files and
-- creates a dependency DAG between environments (lemmas, definitions, theorems, etc.),
-- checks the current numbering against this DAG,
-- and, when necessary, suggests a topological reordering.
+A python-script using LaTeX .aux and .tex files in order to
+- create a directed acyclic graph (DAG) that captures references between labels
+- tests the current numbering of the labeled objects and checks if it is consistent (i.e. a topological ordering of the DAG)
+- suggest an topological ordering
 
-Additional comments help you follow each step.
+This script is heavily commented to ensure understandablity.
 """
 
 import re
@@ -27,7 +27,7 @@ def parse_aux(aux_path):
                     e.g. "lem:foo" -> (1, 5)
     """
     label_to_num = {}
-    # Regex: \newlabel{LABEL}{{NUMBERS}{...}}
+    # Regex to look for '\newlabel{LABEL}{{NUMBERS}'
     pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)\}")
 
     # Read the file line by line
@@ -37,16 +37,18 @@ def parse_aux(aux_path):
                 match = pattern.search(line)
                 if not match:
                     continue
+                # get the LABEL part of the match with '\newlabel{LABEL}{{NUMBERS}'
                 label = match.group(1)
+                # get the NUMBERS part of the match with '\newlabel{LABEL}{{NUMBERS}'
                 num_str = match.group(2)
                 # Split "1.5.2" -> ["1","5","2"] and convert to ints
                 nums = tuple(int(n) for n in num_str.split('.'))
+            # fill up the dictionary
                 label_to_num[label] = nums
                 # Debug: print(f"Found label: {label} -> number {nums}")
     except OSError as exc:
         print(f"Error reading {aux_path}: {exc}", file=sys.stderr)
         return {}
-
     return label_to_num
 
 
