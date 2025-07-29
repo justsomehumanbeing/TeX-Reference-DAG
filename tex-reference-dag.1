@@ -1,0 +1,44 @@
+.TH TEX-REFERENCE-DAG 1 "$(date -I)" "TeX-Reference-DAG" "User Commands"
+.SH NAME
+tex-reference-dag \- check LaTeX label dependencies
+.SH SYNOPSIS
+.B tex-reference-dag
+.I aux-file
+.I tex-files...
+.RI [ options ]
+.SH DESCRIPTION
+.B tex-reference-dag
+reads the LaTeX
+.I .aux
+and
+.I .tex
+files of a project and verifies that the numbering of labelled statements
+(like theorems or definitions) respects the dependency order given by
+their references.  A topological ordering of the dependency graph is
+printed and optional TikZ graphs can be generated.
+.SH OPTIONS
+.TP
+.B --refs
+List of macros used for references.  Defaults to
+\fC\reflem \refdef \refthm \refcor \ref\fR.
+.TP
+.B --draw-dir
+Directory where TikZ graphs are written (default: \fCgraphs\fR).
+.TP
+.B --draw-each-section
+Generate a TikZ graph for every section showing local dependencies.
+.TP
+.B --draw-collapsed-sections
+Generate a collapsed DAG where each node represents a section.
+.SH ARGUMENTS
+.TP
+.I aux-file
+Path to the LaTeX \fC.aux\fR file.
+.TP
+.I tex-files
+One or more \fC.tex\fR files that are scanned for labels and references.
+.SH SEE ALSO
+.BR python (1),
+.BR networkx (1)
+.SH AUTHOR
+Written by Lino Joss Fidel Haupt.
