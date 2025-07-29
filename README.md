@@ -28,6 +28,31 @@ No further external dependencies are required.
 
 ---
 
+## 📜 LaTeX Referencing Requirements
+
+To function correctly, all logical dependencies in your LaTeX documents must be **explicitly** declared using `ef{...}` or specialized macros such as `eflem{...}`, `efdef{...}`, etc. TeX-Reference-DAG builds the dependency graph solely from these syntactic references; any missing or unreferenced dependencies will **not** be detected.
+
+### Customizing to Your Reference Style
+
+* Pass custom reference macros via the `--refs` argument:
+
+  ```bash
+  python tex-reference-dag.py main.aux *.tex --refs "\refmydef" "\refmythm"
+  ```
+* Alternatively, modify the default macros list directly in `tex-reference-dag.py` under:
+
+  ```python
+    parser.add_argument(
+        '--refs', nargs='+', default=['\\reflem', '\\refdef', '\\refthm', '\\refcor', '\\ref'],
+        help='Liste der referenzierenden Makros (Standard: \\reflem, \\refdef, \\refthem, \\refcor, \\ref)'
+    )
+  ```
+
+> **Important:** This tool performs **no** semantic analysis.
+> It only recognizes dependencies that you have explicitly referenced.
+
+---
+
 ## ⚠️ Disclaimer & Legal
 
 This software is provided "as-is" without any warranty, expressed or implied.
@@ -52,16 +77,16 @@ Let say you have a project with the main LaTeX file `main.tex` and additional fi
 If you haven't done so far compile the newest version to obtain an up to date `main.aux` and then run
 
 ```bash
-python depencychecker.py main.aux file1.tex file2.tex
+python tex-reference-dag.py main.aux file1.tex file2.tex
 ```
 
 or if you do not want to type out the `.tex`-files one-by-one you may use wildcards and run
 
 ```bash
-python depencychecker.py main.aux *.tex
+python tex-reference-dag.py main.aux *.tex
 ```
 
-If your `.tex` files reside in a different path than your `dependencychecker.py` just use absolute or relative paths.
+If your `.tex` files reside in a different path than your `tex-reference-dag.py` just use absolute or relative paths.
 
 ### 📝 Feedback and Contributions
 
