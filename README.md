@@ -30,8 +30,9 @@ No further external dependencies are required.
 
 ## 📜 LaTeX Referencing Requirements
 
-        help='List of referencing macros (default: \\reflem, \\refdef, \\refthm, \\refcor, \\ref)'
-ef{...}` or specialized macros such as `eflem{...}`, `efdef{...}`, etc. TeX-Reference-DAG builds the dependency graph solely from these syntactic references; any missing or unreferenced dependencies will **not** be detected.
+To function correctly, all logical dependencies in your LaTeX documents must be **explicitly** declared using `\ref{...}` or specialized macros such as `\reflem{...}`, `\refdef{...}`, etc.
+TeX-Reference-DAG builds the dependency graph solely from these syntactic references;
+any missing or unreferenced dependencies will **not** be detected.
 
 ### Customizing to Your Reference Style
 
