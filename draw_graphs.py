@@ -24,7 +24,7 @@ This script is heavily commented to ensure understandability.
 """
 
 import networkx as nx
-from typing import TypeVar, Callable, Hashable, Any
+from typing import TypeVar, Callable, Hashable, Any, Tuple
 
 # Type variables for generic node and group types
 Node = TypeVar('Node')
@@ -64,10 +64,36 @@ def collapse_graph(
 
 # TODO: implement export_to_tikz that takes a NetworkX graph and writes a TikZ picture
 
+
+def compute_coordinates(
+    G: nx.MultiDiGraph[Node, Any],
+    layout: str = 'dot'
+) -> Dict[Node, Tuple[float, float]]:
+    """
+    Compute 2D coordinates for each node in G.
+    layout:
+      - 'dot'    hierarchical layout using Graphviz (requires pydot)
+      - 'spring' force-directed layout using networkx
+
+    Returns:
+        A dict mapping each node to an (x, y) tuple of floats.
+    """
+    try:
+        if layout == 'dot':
+            # Hierarchical layout via Graphviz
+            pos = nx.drawing.nx_pydot.graphviz_layout(G, prog='dot')
+        else:
+            # Force-directed layout
+            pos = nx.spring_layout(G)
+    except Exception:
+        # Fallback to spring layout if graphviz is unavailable or errors
+        pos = nx.spring_layout(G)
+    return pos
+
 def export_to_tikz(
     H: nx.MultiDiGraph[Node, Any],
-    name: Callable[[Node], String],
-    path: String
+    name: Callable[[Node], str],
+    path: str
 ) -> None:
     """
     Draws the MultiDiGraph H in TikZ and uses name for the naming and path to save the file.
@@ -83,10 +109,46 @@ def export_to_tikz(
         However, the file in path will be written to.
     """
 
-    # How do we determine the coordinates of the Nodes?
+    # Get the coordinates where the nodes shall be drawn:
+    pos = compute_coordinates(H,'spring')
 
-    # we shall draw the edges with a thickness corresponding to their multiplicity
-
-    # (not now) We must translate this into TikZ code
-
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write("\\begin{tikzpicture}\n")
+        # Nodes
+        for node, (x, y) in pos.items():
+            nm = name(node)
+            f.write(
+                f"  \\node[draw,circle] ({nm}) at ({x:.2f},{y:.2f}) {{{nm}}};\n"
+            )
+        f.write("\n")
+        # Edges
+        for u, v in H.edges():
+            mult = H.number_of_edges(u, v)
+            if mult = 0:
+                break
+            width = 0.5 + 0.2*(mult-1)
+            f.write(
+                f"  \\draw[line width={width:.2f}pt] "
+                f"({name(u)}) -- ({name(v)});\n"
+            )
+        f.write("\\end{tikzpicture}\n")
     return None
+
+
+def name(t: Tuple[int, ...]) -> str:
+    """
+    Wandelt ein Tupel von ganzen Zahlen in einen Punkt-getrennten String um.
+    Beispiel: (2, 1, 5) -> "2.1.5"
+    """
+    return ".".join(str(x) for x in t)
+
+
+def rep_creator(level: int) -> Callable[[Tuple[int, ...]], Tuple[int, ...]]:
+    """
+    Erzeugt eine Funktion rep, die ein Tupel abschneidet auf die ersten `level` Einträge.
+    Beispiel: level=2, rep((3,4,1,2)) -> (3,4)
+    """
+    def rep(t: Tuple[int, ...]) -> Tuple[int, ...]:
+        # Slicing schneidet automatisch, wenn t kürzer ist, gibt das ganze Tupel zurück
+        return t[:level]
+    return rep
