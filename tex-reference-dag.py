@@ -26,6 +26,7 @@ This script is heavily commented to ensure understandablity.
 import os
 import re
 import argparse
+import json
 import networkx as nx
 import sys
 from typing import Dict, List, Optional, Tuple
@@ -68,7 +69,47 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     return label_to_num
 
 
-def parse_refs(tex_paths: List[str], ref_cmds: List[str]) -> List[Tuple[str, str]]:
+def parse_macro_file(path: str) -> Tuple[List[str], List[str]]:
+    """Read a JSON file describing reference macros.
+
+    The file must contain a JSON object with at least the key
+    ``"references"`` listing standard referencing commands.  Future
+    references can be specified via the ``"future_references"`` key.
+
+    Example::
+
+        {
+            "references": ["\\reflem", "\\ref"],
+            "future_references": ["\\fref"]
+        }
+
+    Additional keys are ignored so the format can be extended later on.
+    """
+
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except OSError as exc:
+        print(f"Could not read macro file {path}: {exc}", file=sys.stderr)
+        return [], []
+    except json.JSONDecodeError as exc:
+        print(f"Invalid JSON in macro file {path}: {exc}", file=sys.stderr)
+        return [], []
+
+    if not isinstance(data, dict):
+        print(f"Macro file {path} must contain a JSON object", file=sys.stderr)
+        return [], []
+
+    refs = [str(cmd) for cmd in data.get("references", [])]
+    future_refs = [str(cmd) for cmd in data.get("future_references", [])]
+    return refs, future_refs
+
+
+def parse_refs(
+    tex_paths: List[str],
+    ref_cmds: List[str],
+    future_ref_cmds: List[str],
+) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     r"""
     Search all .tex files for:
      1) \label{...} commands => position in the text + label name
@@ -76,10 +117,12 @@ def parse_refs(tex_paths: List[str], ref_cmds: List[str]) -> List[Tuple[str, str
 
     From the document order (position) determine which label appears closest before a reference.
 
-    Returns:
-      edges: List[Tuple[src_label, target_label]]
+    Returns two lists of edges:
+      ``edges`` for normal references and ``future_edges`` for references
+      that intentionally point forward in the document.
     """
     edges: List[Tuple[str, str]] = []
+    future_edges: List[Tuple[str, str]] = []
 
     # Label regex: finds all \label{...}
     label_pattern = re.compile(r"\\label\{([^}]+)\}")
@@ -102,17 +145,21 @@ def parse_refs(tex_paths: List[str], ref_cmds: List[str]) -> List[Tuple[str, str
         # Labels are now ordered as they appear in the text.
 
         # 2) Collect all references
-        refs: List[Tuple[int, str]] = []  # list of (position, target_label)
+        refs: List[Tuple[int, str, bool]] = []  # (position, target_label, future)
         for cmd in ref_cmds:
             # Build a regex for each macro: e.g. r"\\reflem\{([^}]+)\}" matches \reflem{foo}
             pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
             for m in pat.finditer(content):
-                refs.append((m.start(), m.group(1)))
+                refs.append((m.start(), m.group(1), False))
+        for cmd in future_ref_cmds:
+            pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
+            for m in pat.finditer(content):
+                refs.append((m.start(), m.group(1), True))
         # Sort by position here as well
         refs.sort(key=lambda x: x[0])
 
         # 3) For each reference (pos, target) find the last label before it
-        for ref_pos, target_label in refs:
+        for ref_pos, target_label, is_future in refs:
             # Look for the label with the greatest position < ref_pos
             src_label = None
             for label_pos, label_name in labels:
@@ -122,10 +169,13 @@ def parse_refs(tex_paths: List[str], ref_cmds: List[str]) -> List[Tuple[str, str
                     # Once we find a label that comes after the reference, stop
                     break
             if src_label:
-                edges.append((src_label, target_label))
+                if is_future:
+                    future_edges.append((src_label, target_label))
+                else:
+                    edges.append((src_label, target_label))
                 # Debug: print(f"Edge: {src_label} -> {target_label}")
 
-    return edges
+    return edges, future_edges
 
 
 def check_violations(
@@ -178,6 +228,7 @@ def draw_section_graphs(
     aux_path: str,
     tex_paths: list[str],
     ref_cmds: list[str],
+    future_ref_cmds: list[str],
     output_dir: str,
     *,
     draw_each_section: bool = True,
@@ -186,8 +237,11 @@ def draw_section_graphs(
     """
     Draw graphs of the dependency structure.
     Parameters control which graphs are produced:
-      - draw_collapsed: draw a DAG where each node represents a section.
-      - draw_each_section: draw a DAG for each individual section.
+      - ``ref_cmds``: macros used for ordinary references.
+      - ``future_ref_cmds``: macros denoting forward references that are
+        ignored for dependency checks.
+      - ``draw_collapsed``: draw a DAG where each node represents a section.
+      - ``draw_each_section``: draw a DAG for each individual section.
     The resulting TikZ files are written into ``output_dir``.
     """
     # Prepare output directory
@@ -195,7 +249,7 @@ def draw_section_graphs(
 
     # Parse inputs
     label_to_num = parse_aux(aux_path)
-    edges = parse_refs(tex_paths, ref_cmds)
+    edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds)
 
     # Build full DiGraph using the numeric tuples as nodes
     full_G = nx.DiGraph()
@@ -258,8 +312,8 @@ def main() -> None:
     parser.add_argument('aux', help='Path to the .aux file generated by LaTeX')
     parser.add_argument('tex', nargs='+', help='One or more .tex files to scan')
     parser.add_argument(
-        '--refs', nargs='+', default=['\\reflem', '\\refdef', '\\refthm', '\\refcor', '\\ref'],
-        help='List of referencing macros'
+        '--macro-file',
+        help='JSON file specifying reference macros'
     )
     parser.add_argument(
         '--draw-dir', default='graphs', help='Output directory for TikZ graphs'
@@ -279,8 +333,15 @@ def main() -> None:
     # Step 1: parse aux file -> determine label numbers
     label_to_num = parse_aux(args.aux)
 
+    # Determine reference macros
+    if args.macro_file:
+        ref_cmds, future_ref_cmds = parse_macro_file(args.macro_file)
+    else:
+        ref_cmds = ['\\reflem', '\\refdef', '\\refthm', '\\refcor', '\\ref']
+        future_ref_cmds = []
+
     # Step 2: parse tex files -> build edge list
-    edges = parse_refs(args.tex, args.refs)
+    edges, future_edges = parse_refs(args.tex, ref_cmds, future_ref_cmds)
 
     # Step 3: check for violations
     violations = check_violations(edges, label_to_num)
@@ -308,7 +369,8 @@ def main() -> None:
         draw_section_graphs(
             args.aux,
             args.tex,
-            args.refs,
+            ref_cmds,
+            future_ref_cmds,
             args.draw_dir,
             draw_each_section=args.draw_each_section,
             draw_collapsed=args.draw_collapsed_sections,

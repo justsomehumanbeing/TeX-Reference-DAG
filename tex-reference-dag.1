@@ -20,17 +20,19 @@ printed and optional TikZ graphs can be generated.
 
 The program first reads the \fC.aux\fR file to map every label to its
 numerical counter.  It then scans the provided \fC.tex\fR files for
-\fC\\label{...}\fR commands and for reference macros specified via
-\fB--refs\fR.  Each reference introduces a directed edge from the closest
+\fC\\label{...}\fR commands and for reference macros specified via a
+\fBmacro file\fR.  Each reference introduces a directed edge from the closest
 preceding label to the referenced label.  NetworkX is used to analyse
 the resulting graph, detect cycles and compute a topological order.
 If a label is referenced before its number appears in this order, the
 violation is reported together with a suggested renumbering.
 .SH OPTIONS
 .TP
-.B --refs
-List of macros used for references.  Defaults to
-\fC\\reflem \\refdef \\refthm \\refcor \\ref\fR.
+.B --macro-file
+JSON file describing reference macros.  If omitted, the program uses
+the built-in defaults
+\fC\\reflem \\refdef \\refthm \\refcor \\ref\fR and assumes no
+future reference macros.
 .TP
 .B --draw-dir
 Directory where TikZ graphs are written (default: \fCgraphs\fR).
@@ -54,9 +56,9 @@ Run on a typical project after compilation:
 $ python tex-reference-dag.py main.aux *.tex
 .EE
 .TP
-Use custom reference macros and draw graphs:
+Use a macro configuration file (e.g. \fCmacros.example.json\fR) and draw graphs:
 .EX
-$ python tex-reference-dag.py main.aux chap*.tex --refs \\reflem \\refthm \\refdef \
+$ python tex-reference-dag.py main.aux chap*.tex --macro-file macros.json \
   --draw-dir graphs --draw-collapsed-sections --draw-each-section
 .EE
 .SH SEE ALSO

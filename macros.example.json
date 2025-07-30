@@ -1,0 +1,4 @@
+{
+  "references": ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"],
+  "future_references": ["\\fref"]
+}

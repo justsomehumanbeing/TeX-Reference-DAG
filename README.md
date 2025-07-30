@@ -36,19 +36,29 @@ any missing or unreferenced dependencies will **not** be detected.
 
 ### Customizing to Your Reference Style
 
-* Pass custom reference macros via the `--refs` argument:
+Create a small JSON file describing all macros that introduce dependencies.
+It must contain a list `references` with ordinary references and may
+optionally list `future_references` for commands that deliberately point
+forward in the document:
 
-  ```bash
-  python tex-reference-dag.py main.aux *.tex --refs "\refmydef" "\refmythm"
-  ```
-* Alternatively, modify the default macros list directly in `tex-reference-dag.py` under:
+```json
+{
+  "references": ["\\reflem", "\\refdef", "\\ref"],
+  "future_references": ["\\fref"]
+}
+```
 
-  ```python
-    parser.add_argument(
-        '--refs', nargs='+', default=['\\reflem', '\\refdef', '\\refthm', '\\refcor', '\\ref'],
-        help='Liste der referenzierenden Makros (Standard: \\reflem, \\refdef, \\refthem, \\refcor, \\ref)'
-    )
-  ```
+Run the program with the `--macro-file` option:
+
+```bash
+python tex-reference-dag.py main.aux *.tex --macro-file macros.json
+```
+
+An example configuration is provided in `macros.example.json`.
+
+If no file is given, the defaults `\\reflem`, `\\refdef`, `\\refthm`,
+`\\refcor`, and `\\ref` are used for ordinary references and no future
+reference macros are assumed.
 
 > **Important:** This tool performs **no** semantic analysis.
 > It only recognizes dependencies that you have explicitly referenced.
