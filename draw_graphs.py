@@ -63,9 +63,6 @@ def collapse_graph(
             H.add_edge(grp_u, grp_v)
     return H
 
-# TODO: implement export_to_tikz that takes a NetworkX graph and writes a TikZ picture
-
-
 def compute_coordinates(
     G: nx.MultiDiGraph[Node, Any],
     layout: str = 'kamada_kawai',
