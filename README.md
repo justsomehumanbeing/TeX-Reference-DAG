@@ -34,17 +34,25 @@ To function correctly, all logical dependencies in your LaTeX documents must be 
 TeX-Reference-DAG builds the dependency graph solely from these syntactic references;
 any missing or unreferenced dependencies will **not** be detected.
 
+Labels are expected to follow the scheme `\label{<type>:<name>}` where the
+prefix `type` categorises the object, e.g. `\label{lem:zorn}` for a lemma.
+Entries whose type is `fig` (figures) or `eq` (equations) are ignored by
+default because their numbering does not correspond to section numbers.
+Additional types can be excluded via the configuration file described below.
+
 ### Customizing to Your Reference Style
 
 Create a small JSON file describing all macros that introduce dependencies.
 It must contain a list `references` with ordinary references and may
 optionally list `future_references` for commands that deliberately point
-forward in the document:
+forward in the document as well as `excluded_types` for label prefixes
+that should be ignored:
 
 ```json
 {
   "references": ["\\reflem", "\\refdef", "\\ref"],
-  "future_references": ["\\fref"]
+  "future_references": ["\\fref"],
+  "excluded_types": ["fig", "eq"]
 }
 ```
 

@@ -69,7 +69,7 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     return label_to_num
 
 
-def parse_macro_file(path: str) -> Tuple[List[str], List[str]]:
+def parse_macro_file(path: str) -> Tuple[List[str], List[str], List[str]]:
     """Read a JSON file describing reference macros.
 
     The file must contain a JSON object with at least the key
@@ -91,24 +91,26 @@ def parse_macro_file(path: str) -> Tuple[List[str], List[str]]:
             data = json.load(f)
     except OSError as exc:
         print(f"Could not read macro file {path}: {exc}", file=sys.stderr)
-        return [], []
+        return [], [], ["fig", "eq"]
     except json.JSONDecodeError as exc:
         print(f"Invalid JSON in macro file {path}: {exc}", file=sys.stderr)
-        return [], []
+        return [], [], ["fig", "eq"]
 
     if not isinstance(data, dict):
         print(f"Macro file {path} must contain a JSON object", file=sys.stderr)
-        return [], []
+        return [], [], ["fig", "eq"]
 
     refs = [str(cmd) for cmd in data.get("references", [])]
     future_refs = [str(cmd) for cmd in data.get("future_references", [])]
-    return refs, future_refs
+    excluded_types = [str(t) for t in data.get("excluded_types", ["fig", "eq"])]
+    return refs, future_refs, excluded_types
 
 
 def parse_refs(
     tex_paths: List[str],
     ref_cmds: List[str],
     future_ref_cmds: List[str],
+    excluded_types: List[str],
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     r"""
     Search all .tex files for:
@@ -116,6 +118,9 @@ def parse_refs(
      2) reference macros (e.g. \reflem{...}) => position in the text + target label
 
     From the document order (position) determine which label appears closest before a reference.
+
+    ``excluded_types`` contains label prefixes (like ``fig`` for figures)
+    that are ignored completely.
 
     Returns two lists of edges:
       ``edges`` for normal references and ``future_edges`` for references
@@ -137,9 +142,12 @@ def parse_refs(
 
         # 1) Collect all labels with their position
         #    .start() gives the index in the string; we store (position, label_name)
-        labels: List[Tuple[int, str]] = [
-            (m.start(), m.group(1)) for m in label_pattern.finditer(content)
-        ]
+        labels: List[Tuple[int, str]] = []
+        for m in label_pattern.finditer(content):
+            lbl = m.group(1)
+            if lbl.split(':', 1)[0] in excluded_types:
+                continue
+            labels.append((m.start(), lbl))
         # Sort explicitly by position (not lexicographically!)
         labels.sort(key=lambda x: x[0])
         # Labels are now ordered as they appear in the text.
@@ -168,7 +176,7 @@ def parse_refs(
                 else:
                     # Once we find a label that comes after the reference, stop
                     break
-            if src_label:
+            if src_label and target_label.split(':', 1)[0] not in excluded_types:
                 if is_future:
                     future_edges.append((src_label, target_label))
                 else:
@@ -229,6 +237,7 @@ def draw_section_graphs(
     tex_paths: list[str],
     ref_cmds: list[str],
     future_ref_cmds: list[str],
+    excluded_types: list[str],
     output_dir: str,
     *,
     draw_each_section: bool = True,
@@ -240,6 +249,7 @@ def draw_section_graphs(
       - ``ref_cmds``: macros used for ordinary references.
       - ``future_ref_cmds``: macros denoting forward references that are
         ignored for dependency checks.
+      - ``excluded_types``: label prefixes (like ``fig``) that are skipped.
       - ``draw_collapsed``: draw a DAG where each node represents a section.
       - ``draw_each_section``: draw a DAG for each individual section.
     The resulting TikZ files are written into ``output_dir``.
@@ -248,8 +258,12 @@ def draw_section_graphs(
     os.makedirs(output_dir, exist_ok=True)
 
     # Parse inputs
-    label_to_num = parse_aux(aux_path)
-    edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds)
+    label_to_num = {
+        lbl: nums
+        for lbl, nums in parse_aux(aux_path).items()
+        if lbl.split(':', 1)[0] not in excluded_types
+    }
+    edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds, excluded_types)
 
     # Build full DiGraph using the numeric tuples as nodes
     full_G = nx.DiGraph()
@@ -335,15 +349,22 @@ def main() -> None:
 
     # Determine reference macros
     if args.macro_file:
-        ref_cmds, future_ref_cmds = parse_macro_file(args.macro_file)
+        ref_cmds, future_ref_cmds, excluded_types = parse_macro_file(args.macro_file)
     else:
         ref_cmds = ['\\reflem', '\\refdef', '\\refthm', '\\refcor', '\\ref']
         future_ref_cmds = []
+        excluded_types = ["fig", "eq"]
 
     # Step 2: parse tex files -> build edge list
-    edges, future_edges = parse_refs(args.tex, ref_cmds, future_ref_cmds)
+    edges, future_edges = parse_refs(args.tex, ref_cmds, future_ref_cmds, excluded_types)
 
     # Step 3: check for violations
+    label_to_num = {
+        lbl: nums
+        for lbl, nums in label_to_num.items()
+        if lbl.split(':', 1)[0] not in excluded_types
+    }
+
     violations = check_violations(edges, label_to_num)
     if violations:
         print("⚠️ Ordering violations found:")
@@ -371,6 +392,7 @@ def main() -> None:
             args.tex,
             ref_cmds,
             future_ref_cmds,
+            excluded_types,
             args.draw_dir,
             draw_each_section=args.draw_each_section,
             draw_collapsed=args.draw_collapsed_sections,

@@ -1,4 +1,5 @@
 {
   "references": ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"],
-  "future_references": ["\\fref"]
+  "future_references": ["\\fref"],
+  "excluded_types": ["fig", "eq"]
 }
