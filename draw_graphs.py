@@ -123,11 +123,15 @@ def export_to_tikz(
             )
         f.write("\n")
         # Edges
+        seen_pairs = set()
         for u, v in H.edges():
+            if (u, v) in seen_pairs:
+                continue
+            seen_pairs.add((u, v))
             mult = H.number_of_edges(u, v)
             if mult == 0:
                 continue
-            width = 0.5 + 0.2*(mult-1)
+            width = 0.5 + 0.2 * (mult - 1)
             f.write(
                 f"  \\draw[line width={width:.2f}pt] "
                 f"({name(u)}) -- ({name(v)});\n"
