@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 # SPDX-License-Identifier: GPL-3.0-only
 # (c) 2025 Lino Joss Fidel Haupt
 #
