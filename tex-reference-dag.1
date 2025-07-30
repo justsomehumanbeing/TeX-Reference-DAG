@@ -1,4 +1,5 @@
-.TH TEX-REFERENCE-DAG 1 "$(date -I)" "TeX-Reference-DAG" "User Commands"
+.TH TEX-REFERENCE-DAG 1 "2025-07-29" "TeX-Reference-DAG" "User Commands"
+.nh
 .SH NAME
 tex-reference-dag \- check LaTeX label dependencies
 .SH SYNOPSIS
@@ -16,11 +17,20 @@ files of a project and verifies that the numbering of labelled statements
 (like theorems or definitions) respects the dependency order given by
 their references.  A topological ordering of the dependency graph is
 printed and optional TikZ graphs can be generated.
+
+The program first reads the \fC.aux\fR file to map every label to its
+numerical counter.  It then scans the provided \fC.tex\fR files for
+\fC\\label{...}\fR commands and for reference macros specified via
+\fB--refs\fR.  Each reference introduces a directed edge from the closest
+preceding label to the referenced label.  NetworkX is used to analyse
+the resulting graph, detect cycles and compute a topological order.
+If a label is referenced before its number appears in this order, the
+violation is reported together with a suggested renumbering.
 .SH OPTIONS
 .TP
 .B --refs
 List of macros used for references.  Defaults to
-\fC\reflem \refdef \refthm \refcor \ref\fR.
+\fC\\reflem \\refdef \\refthm \\refcor \\ref\fR.
 .TP
 .B --draw-dir
 Directory where TikZ graphs are written (default: \fCgraphs\fR).
@@ -37,6 +47,18 @@ Path to the LaTeX \fC.aux\fR file.
 .TP
 .I tex-files
 One or more \fC.tex\fR files that are scanned for labels and references.
+.SH EXAMPLES
+.TP
+Run on a typical project after compilation:
+.EX
+$ python tex-reference-dag.py main.aux *.tex
+.EE
+.TP
+Use custom reference macros and draw graphs:
+.EX
+$ python tex-reference-dag.py main.aux chap*.tex --refs \\reflem \\refthm \\refdef \
+  --draw-dir graphs --draw-collapsed-sections --draw-each-section
+.EE
 .SH SEE ALSO
 .BR python (1),
 .BR networkx (1)
