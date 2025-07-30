@@ -228,6 +228,7 @@ def draw_section_graphs(
                 if nums[0] == sec:
                     sub_H.add_node(nums)
             # Add edges inside this section
+
             for u_lbl, v_lbl in edges:
                 if (
                     u_lbl in label_to_num
@@ -239,6 +240,7 @@ def draw_section_graphs(
             # Skip empty graphs
             if sub_H.number_of_nodes() == 0:
                 continue
+
             # Export
             filename = f"section_{sec}.tex"
             export_to_tikz(
