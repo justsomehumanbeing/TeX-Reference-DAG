@@ -68,14 +68,15 @@ def collapse_graph(
 
 def compute_coordinates(
     G: nx.MultiDiGraph[Node, Any],
-    layout: str = 'dot',
+    layout: str = 'kamada_kawai',
     k: float = 10.0,
 ) -> Dict[Node, Tuple[float, float]]:
     """
     Compute 2D coordinates for each node in G.
     layout:
       - 'dot'    hierarchical layout using Graphviz (requires pydot)
-      - 'spring' force-directed layout using networkx
+      - 'spring'       force-directed layout (Fruchterman-Reingold)
+      - 'kamada_kawai' balanced layout minimizing edge lengths
 
     k:
         scaling factor for the coordinates; larger values spread nodes
@@ -87,12 +88,15 @@ def compute_coordinates(
         if layout == 'dot':
             # Hierarchical layout via Graphviz
             pos = nx.drawing.nx_pydot.graphviz_layout(G, prog='dot')
-        else:
-            # Force-directed layout
+        elif layout == 'spring':
+            # Classic force-directed layout
             pos = nx.spring_layout(G)
+        else:
+            # Kamada-Kawai provides a more balanced distribution
+            pos = nx.kamada_kawai_layout(G)
     except Exception:
-        # Fallback to spring layout if graphviz is unavailable or errors
-        pos = nx.spring_layout(G)
+        # Fallback to Kamada-Kawai layout if graphviz is unavailable or errors
+        pos = nx.kamada_kawai_layout(G)
 
     # Scale coordinates to reduce overlap in the resulting TikZ picture
     scaled_pos: Dict[Node, Tuple[float, float]] = {
@@ -125,7 +129,7 @@ def export_to_tikz(
     """
 
     # Get the coordinates where the nodes shall be drawn:
-    pos = compute_coordinates(H, 'spring', k=scale)
+    pos = compute_coordinates(H, 'kamada_kawai', k=scale)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write("\\begin{tikzpicture}\n")
