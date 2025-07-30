@@ -128,8 +128,15 @@ def export_to_tikz(
         However, the file in path will be written to.
     """
 
-    # Get the coordinates where the nodes shall be drawn:
-    pos = compute_coordinates(H, 'kamada_kawai', k=scale)
+    # Remove isolated nodes that have no edges into or out of them.  These
+    # clutter the resulting drawing without adding information about the
+    # dependency structure.
+    nodes_with_edges = [n for n in H.nodes if H.degree(n) > 0]
+    G = H.subgraph(nodes_with_edges).copy()
+
+    # Get the coordinates where the nodes shall be drawn.  We compute the layout
+    # on the filtered graph ``G`` to ignore isolated nodes entirely.
+    pos = compute_coordinates(G, 'kamada_kawai', k=scale)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write("\\begin{tikzpicture}\n")
@@ -142,11 +149,11 @@ def export_to_tikz(
         f.write("\n")
         # Edges
         seen_pairs = set()
-        for u, v in H.edges():
+        for u, v in G.edges():
             if (u, v) in seen_pairs:
                 continue
             seen_pairs.add((u, v))
-            mult = H.number_of_edges(u, v)
+            mult = G.number_of_edges(u, v)
             if mult == 0:
                 continue
             width = 0.5 + 0.2 * (mult - 1)

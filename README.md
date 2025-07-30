@@ -108,6 +108,14 @@ python tex-reference-dag.py main.aux *.tex
 
 If your `.tex` files reside in a different path than your `tex-reference-dag.py` just use absolute or relative paths.
 
+### 📈 Visualizing Dependencies
+
+To inspect the reference DAG you can generate TikZ graphs by passing
+`--draw-dir` together with `--draw-each-section` or
+`--draw-collapsed-sections`.
+Nodes that have no incoming or outgoing edges are omitted from these graphs
+to keep the drawings concise.
+
 ### 📝 Feedback and Contributions
 
 Feel free to open issues or submit pull requests for improvements or new features!
