@@ -68,7 +68,8 @@ def collapse_graph(
 
 def compute_coordinates(
     G: nx.MultiDiGraph[Node, Any],
-    layout: str = 'dot'
+    layout: str = 'dot',
+    k: float = 10.0,
 ) -> Dict[Node, Tuple[float, float]]:
     """
     Compute 2D coordinates for each node in G.
@@ -76,8 +77,11 @@ def compute_coordinates(
       - 'dot'    hierarchical layout using Graphviz (requires pydot)
       - 'spring' force-directed layout using networkx
 
+    k:
+        scaling factor for the coordinates; larger values spread nodes
+
     Returns:
-        A dict mapping each node to an (x, y) tuple of floats.
+        A dict mapping each node to an (x, y) tuple of floats scaled by ``k``.
     """
     try:
         if layout == 'dot':
@@ -89,12 +93,19 @@ def compute_coordinates(
     except Exception:
         # Fallback to spring layout if graphviz is unavailable or errors
         pos = nx.spring_layout(G)
-    return pos
+
+    # Scale coordinates to reduce overlap in the resulting TikZ picture
+    scaled_pos: Dict[Node, Tuple[float, float]] = {
+        node: (x * k, y * k) for node, (x, y) in pos.items()
+    }
+    return scaled_pos
 
 def export_to_tikz(
     H: nx.MultiDiGraph[Node, Any],
     name: Callable[[Node], str],
-    path: str
+    path: str,
+    *,
+    scale: float = 10.0,
 ) -> None:
     """
     Draws the MultiDiGraph H in TikZ and uses name for the naming and path to save the file.
@@ -105,13 +116,16 @@ def export_to_tikz(
             A function assigning each node of H a name which is used in the drawing.
         path:
             The filename (including the absolute or relative path) in which the TikZ code shall be drawn.
+        scale:
+            scaling factor passed to ``compute_coordinates`` to control
+            node spacing in the output.
     OUTPUT:
         No output inside of python.
         However, the file in path will be written to.
     """
 
     # Get the coordinates where the nodes shall be drawn:
-    pos = compute_coordinates(H,'spring')
+    pos = compute_coordinates(H, 'spring', k=scale)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write("\\begin{tikzpicture}\n")
