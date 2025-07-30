@@ -197,10 +197,14 @@ def draw_section_graphs(
     label_to_num = parse_aux(aux_path)
     edges = parse_refs(tex_paths, ref_cmds)
 
-    # Build full DiGraph of labels
+    # Build full DiGraph using the numeric tuples as nodes
     full_G = nx.DiGraph()
-    full_G.add_nodes_from(label_to_num.keys())
-    full_G.add_edges_from(edges)
+    # Map label names to their numeric representation for edges
+    for lbl, nums in label_to_num.items():
+        full_G.add_node(nums)
+    for u_lbl, v_lbl in edges:
+        if u_lbl in label_to_num and v_lbl in label_to_num:
+            full_G.add_edge(label_to_num[u_lbl], label_to_num[v_lbl])
 
     if draw_collapsed:
         # 1) Collapsed graph at section granularity (level=1)
@@ -217,15 +221,16 @@ def draw_section_graphs(
         # Determine unique sections
         sections = sorted({nums[0] for nums in label_to_num.values()})
         for sec in sections:
-            # Nodes in this section
-            sec_nodes = [
-                lbl for lbl, nums in label_to_num.items() if nums[0] == sec
-            ]
             # Build MultiDiGraph for subgraph
             sub_H = nx.MultiDiGraph()
-            for u, v in edges:
-                if u in sec_nodes and v in sec_nodes:
-                    sub_H.add_edge(u, v)
+            for u_lbl, v_lbl in edges:
+                if (
+                    u_lbl in label_to_num
+                    and v_lbl in label_to_num
+                    and label_to_num[u_lbl][0] == sec
+                    and label_to_num[v_lbl][0] == sec
+                ):
+                    sub_H.add_edge(label_to_num[u_lbl], label_to_num[v_lbl])
             # Export
             filename = f"section_{sec}.tex"
             export_to_tikz(
