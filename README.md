@@ -61,7 +61,8 @@ mapping each prefix to the environment name used in the LaTeX source:
   "references": ["\\reflem", "\\refdef", "\\ref"],
   "future_references": ["\\fref"],
   "excluded_types": ["fig", "eq"],
-  "env_map": {"def": ["defn"], "thm": ["thm"]}
+  "env_map": {"def": ["defn"], "thm": ["thm"]},
+  "theorem_labels": ["lem", "thm", "prop"]
 }
 ```
 

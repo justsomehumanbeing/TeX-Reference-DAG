@@ -34,6 +34,7 @@ from typing import Dict, List, Optional, Tuple
 # import drawing utilities
 from draw_graphs import collapse_graph, export_to_tikz, rep_creator, name
 
+
 def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     r"""
     Read the .aux file and extract all \newlabel definitions.
@@ -52,7 +53,7 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
 
     # Read the file line by line
     try:
-        with open(aux_path, encoding='utf-8') as f:
+        with open(aux_path, encoding="utf-8") as f:
             for line in f:
                 match = pattern.search(line)
                 if not match:
@@ -65,13 +66,13 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
                 # of each part so labels like '2a' become (2,) and '2.3b'
                 # becomes (2, 3).
                 nums_list: List[int] = []
-                for part in num_str.split('.'):
+                for part in num_str.split("."):
                     m = re.match(r"(\d+)", part)
                     if m is None:
                         break
                     nums_list.append(int(m.group(1)))
                 nums = tuple(nums_list)
-            # fill up the dictionary
+                # fill up the dictionary
                 label_to_num[label] = nums
                 # Debug: print(f"Found label: {label} -> number {nums}")
     except OSError as exc:
@@ -87,7 +88,9 @@ def parse_config_file(path: str) -> dict:
     ``future_references`` for forward references, ``excluded_types`` for
     label prefixes that should be ignored and any of the command line
     flags such as ``draw_dir`` or ``layout``.  Positional arguments
-    ``aux`` and ``tex`` can also be provided.
+    ``aux`` and ``tex`` can also be provided.  ``theorem_labels`` may
+    list label prefixes that should include the following proof when
+    gathering references.
     """
 
     try:
@@ -115,17 +118,23 @@ def find_refs_for_label(
     future_ref_cmds: List[str],
     excluded_types: List[str],
     env_map: Dict[str, List[str]],
+    theorem_labels: Optional[List[str]] = None,
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     """Return references originating from ``label`` in its environment.
 
     ``f`` must be an opened file object positioned anywhere. The function
     reads the file to locate the LaTeX environment containing ``label`` and
     extracts all references within that environment. ``label_pos`` is the
-    offset of the ``\label`` command in the file.
+    offset of the ``\label`` command in the file.  If ``label`` belongs to one
+    of ``theorem_labels``, the search area is extended to include an immediate
+    ``proof`` environment following the labeled environment.
     """
 
     f.seek(0)
     content = f.read()
+
+    if theorem_labels is None:
+        theorem_labels = []
 
     lbl_type = label.split(":", 1)[0]
     envs = env_map.get(lbl_type, [])
@@ -163,6 +172,15 @@ def find_refs_for_label(
     if env_start is None or env_end is None:
         return [], []
 
+    # Extend to the subsequent proof if applicable
+    if lbl_type in theorem_labels:
+        proof_pat = re.compile(r"\\begin\{proof\}(.*?)\\end\{proof\}", re.DOTALL)
+        m = proof_pat.search(content, env_end)
+        if m:
+            between = content[env_end : m.start()]
+            if re.fullmatch(r"[\s%]*", between):
+                env_end = m.end()
+
     edges: List[Tuple[str, str]] = []
     future_edges: List[Tuple[str, str]] = []
 
@@ -191,17 +209,23 @@ def parse_refs(
     future_ref_cmds: List[str],
     excluded_types: List[str],
     env_map: Dict[str, List[str]],
+    theorem_labels: Optional[List[str]] = None,
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     r"""
     Scan the given ``tex_paths`` for labels and references.
 
     Each label is assigned to the LaTeX environment determined by ``env_map``
     and only references inside that environment are considered. ``excluded_types``
-    lists label prefixes that are skipped entirely.
+    lists label prefixes that are skipped entirely. If ``theorem_labels`` is
+    provided, references inside an immediate ``proof`` environment following one
+    of those labels are also considered.
     """
 
     edges: List[Tuple[str, str]] = []
     future_edges: List[Tuple[str, str]] = []
+
+    if theorem_labels is None:
+        theorem_labels = []
 
     label_pattern = re.compile(r"\\label\{([^}]+)\}")
 
@@ -225,6 +249,7 @@ def parse_refs(
                         future_ref_cmds,
                         excluded_types,
                         env_map,
+                        theorem_labels,
                     )
                     edges.extend(e)
                     future_edges.extend(fe)
@@ -288,6 +313,7 @@ def draw_section_graphs(
     future_ref_cmds: list[str],
     excluded_types: list[str],
     env_map: dict[str, list[str]] | None,
+    theorem_labels: list[str] | None,
     output_dir: str,
     *,
     draw_each_section: bool = True,
@@ -305,6 +331,8 @@ def draw_section_graphs(
       - ``draw_each_section``: draw a DAG for each individual section.
       - ``layout``: layout algorithm for the generated TikZ graphs. One of
         ``'dot'``, ``'spring'`` or ``'kamada_kawai'``.
+      - ``theorem_labels``: label prefixes that should include the following
+        ``proof`` block when collecting references.
     The resulting TikZ files are written into ``output_dir``.
     """
     # Prepare output directory
@@ -314,7 +342,7 @@ def draw_section_graphs(
     label_to_num = {
         lbl: nums
         for lbl, nums in parse_aux(aux_path).items()
-        if lbl.split(':', 1)[0] not in excluded_types
+        if lbl.split(":", 1)[0] not in excluded_types
     }
     if env_map is None:
         env_map = {
@@ -323,7 +351,14 @@ def draw_section_graphs(
             "def": ["defn"],
             "cor": ["cor"],
         }
-    edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds, excluded_types, env_map)
+    edges, _ = parse_refs(
+        tex_paths,
+        ref_cmds,
+        future_ref_cmds,
+        excluded_types,
+        env_map,
+        theorem_labels,
+    )
 
     # Build full DiGraph using the numeric tuples as nodes
     full_G = nx.DiGraph()
@@ -383,7 +418,7 @@ def draw_section_graphs(
 def main() -> None:
     # Parse configuration file first so its values become defaults
     pre = argparse.ArgumentParser(add_help=False)
-    pre.add_argument('--config', '--macro-file', dest='config')
+    pre.add_argument("--config", "--macro-file", dest="config")
     cfg_args, remaining = pre.parse_known_args()
 
     cfg: dict = {}
@@ -392,45 +427,79 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(
         parents=[pre],
-        description="Check dependencies between lemmas/theorems and their numbering."
+        description="Check dependencies between lemmas/theorems and their numbering.",
     )
-    parser.add_argument('aux', nargs='?', default=cfg.get('aux'),
-                        help='Path to the .aux file generated by LaTeX')
-    parser.add_argument('tex', nargs='*', default=cfg.get('tex', []),
-                        help='One or more .tex files to scan')
-    parser.add_argument('--draw-dir', default=cfg.get('draw_dir', 'graphs'),
-                        help='Output directory for TikZ graphs')
-    parser.add_argument('--draw-each-section', action='store_true',
-                        default=cfg.get('draw_each_section'),
-                        help='Write a TikZ graph for every section')
-    parser.add_argument('--draw-collapsed-sections', action='store_true',
-                        default=cfg.get('draw_collapsed_sections'),
-                        help='Write a section-level DAG where nodes represent sections')
-    parser.add_argument('--layout', choices=['dot', 'spring', 'kamada_kawai'],
-                        default=cfg.get('layout', 'kamada_kawai'),
-                        help='Layout algorithm for generated TikZ graphs')
+    parser.add_argument(
+        "aux",
+        nargs="?",
+        default=cfg.get("aux"),
+        help="Path to the .aux file generated by LaTeX",
+    )
+    parser.add_argument(
+        "tex",
+        nargs="*",
+        default=cfg.get("tex", []),
+        help="One or more .tex files to scan",
+    )
+    parser.add_argument(
+        "--draw-dir",
+        default=cfg.get("draw_dir", "graphs"),
+        help="Output directory for TikZ graphs",
+    )
+    parser.add_argument(
+        "--draw-each-section",
+        action="store_true",
+        default=cfg.get("draw_each_section"),
+        help="Write a TikZ graph for every section",
+    )
+    parser.add_argument(
+        "--draw-collapsed-sections",
+        action="store_true",
+        default=cfg.get("draw_collapsed_sections"),
+        help="Write a section-level DAG where nodes represent sections",
+    )
+    parser.add_argument(
+        "--layout",
+        choices=["dot", "spring", "kamada_kawai"],
+        default=cfg.get("layout", "kamada_kawai"),
+        help="Layout algorithm for generated TikZ graphs",
+    )
     args = parser.parse_args(remaining)
 
     if args.aux is None or not args.tex:
-        parser.error('aux file and at least one tex file must be provided either on the command line or in the config file')
+        parser.error(
+            "aux file and at least one tex file must be provided either on the command line or in the config file"
+        )
 
     # Step 1: parse aux file -> determine label numbers
     label_to_num = parse_aux(args.aux)
 
     # Determine reference macros
-    ref_cmds = cfg.get('references', ['\\reflem', '\\refdef', '\\refthm', '\\refcor', '\\ref'])
-    future_ref_cmds = cfg.get('future_references', [])
-    excluded_types = cfg.get('excluded_types', ['fig', 'eq'])
+    ref_cmds = cfg.get(
+        "references", ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"]
+    )
+    future_ref_cmds = cfg.get("future_references", [])
+    excluded_types = cfg.get("excluded_types", ["fig", "eq"])
 
-    env_map = cfg.get('env_map', {'thm': ['thm'], 'lem': ['lem'], 'def': ['defn'], 'cor': ['cor']})
+    env_map = cfg.get(
+        "env_map", {"thm": ["thm"], "lem": ["lem"], "def": ["defn"], "cor": ["cor"]}
+    )
+    theorem_labels = cfg.get("theorem_labels", ["lem", "thm", "prop"])
     # Step 2: parse tex files -> build edge list
-    edges, future_edges = parse_refs(args.tex, ref_cmds, future_ref_cmds, excluded_types, env_map)
+    edges, future_edges = parse_refs(
+        args.tex,
+        ref_cmds,
+        future_ref_cmds,
+        excluded_types,
+        env_map,
+        theorem_labels,
+    )
 
     # Step 3: check for violations
     label_to_num = {
         lbl: nums
         for lbl, nums in label_to_num.items()
-        if lbl.split(':', 1)[0] not in excluded_types
+        if lbl.split(":", 1)[0] not in excluded_types
     }
 
     violations = check_violations(edges, label_to_num)
@@ -462,6 +531,7 @@ def main() -> None:
             future_ref_cmds,
             excluded_types,
             env_map,
+            theorem_labels,
             args.draw_dir,
             draw_each_section=args.draw_each_section,
             draw_collapsed=args.draw_collapsed_sections,
@@ -469,5 +539,5 @@ def main() -> None:
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

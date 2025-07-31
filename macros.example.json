@@ -1,17 +1,13 @@
 {
-  "aux": "main.aux",
-  "tex": ["main.tex"],
-  "references": ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"],
-  "future_references": ["\\fref"],
-  "excluded_types": ["fig", "eq"],
-  "env_map": {
-    "thm": ["thm"],
-    "lem": ["lem"],
-    "def": ["defn"],
-    "cor": ["cor"]
-  },
-  "draw_dir": "graphs",
-  "draw_each_section": false,
-  "draw_collapsed_sections": false,
-  "layout": "kamada_kawai"
+    "aux": "main.aux",
+    "tex": ["main.tex"],
+    "references": ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"],
+    "future_references": ["\\fref"],
+    "excluded_types": ["fig", "eq"],
+    "env_map": {"thm": ["thm"], "lem": ["lem"], "def": ["defn"], "cor": ["cor"]},
+    "theorem_labels": ["lem", "thm", "prop"],
+    "draw_dir": "graphs",
+    "draw_each_section": false,
+    "draw_collapsed_sections": false,
+    "layout": "kamada_kawai",
 }
