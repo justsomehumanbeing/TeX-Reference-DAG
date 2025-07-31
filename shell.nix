@@ -7,8 +7,9 @@ pkgs.mkShell {
       pydot
       pygraphviz
       pytest
+      numpy
+      scipy
     ]))
     pkgs.graphviz
   ];
-}
-
+} 
