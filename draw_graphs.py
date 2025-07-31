@@ -157,9 +157,9 @@ def export_to_tikz(
             mult = G.number_of_edges(u, v)
             if mult == 0:
                 continue
-            width = 0.5 + 0.2 * (mult - 1)
+            width = 1 + 0.4 * (mult - 1)
             f.write(
-                f"  \\draw[line width={width:.2f}pt] "
+                f"  \\draw[->, line width={width:.2f}pt] "
                 f"({name(u)}) -- ({name(v)});\n"
             )
         f.write("\\end{tikzpicture}\n")
