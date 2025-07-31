@@ -110,7 +110,9 @@ def export_to_tikz(
     layout: str = "kamada_kawai",
 ) -> None:
     """
-    Draws the MultiDiGraph H in TikZ and uses name for the naming and path to save the file.
+    Draws the MultiDiGraph H in TikZ and uses ``name`` for node labels.
+    Node identifiers in the generated TikZ output are quoted to remain
+    valid when they contain dots.
     INPUT:
         H:
             An nx.MultiDiGraph which is going to be drawn in TikZ
@@ -145,7 +147,7 @@ def export_to_tikz(
         for node, (x, y) in pos.items():
             nm = name(node)
             f.write(
-                f"  \\node[draw,circle] ({nm}) at ({x:.2f},{y:.2f}) {{{nm}}};\n"
+                f"  \\node[draw,circle] (\"{nm}\") at ({x:.2f},{y:.2f}) {{{nm}}};\n"
             )
         f.write("\n")
         # Edges
@@ -160,7 +162,7 @@ def export_to_tikz(
             width = 1 + 0.4 * (mult - 1)
             f.write(
                 f"  \\draw[->, line width={width:.2f}pt] "
-                f"({name(u)}) -- ({name(v)});\n"
+                f"(\"{name(u)}\") -- (\"{name(v)}\");\n"
             )
         f.write("\\end{tikzpicture}\n")
     return None
