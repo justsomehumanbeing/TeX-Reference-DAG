@@ -170,10 +170,10 @@ def export_to_tikz(
 
 def name(t: Tuple[int, ...]) -> str:
     """
-    Wandelt ein Tupel von ganzen Zahlen in einen Punkt-getrennten String um.
-    Beispiel: (2, 1, 5) -> "2.1.5"
+    Wandelt ein Tupel von ganzen Zahlen in einen '-'-getrennten String um.
+    Beispiel: (2, 1, 5) -> "2_1_5"
     """
-    return ".".join(str(x) for x in t)
+    return "-".join(str(x) for x in t)
 
 
 def rep_creator(level: int) -> Callable[[Tuple[int, ...]], Tuple[int, ...]]:
