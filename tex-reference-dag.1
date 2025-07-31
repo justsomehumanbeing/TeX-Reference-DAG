@@ -50,6 +50,10 @@ Generate a TikZ graph for every section showing local dependencies.
 Generate a collapsed DAG where each node represents a section.
 Isolated nodes without edges are omitted from all generated graphs to keep
 the output concise.
+.TP
+.B --layout
+Layout algorithm for generated TikZ graphs. One of \fCdot\fR, \fCspring\fR, or
+\fCkamada_kawai\fR (default).
 .SH ARGUMENTS
 .TP
 .I aux-file

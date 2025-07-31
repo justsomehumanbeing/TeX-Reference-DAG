@@ -107,6 +107,7 @@ def export_to_tikz(
     path: str,
     *,
     scale: float = 10.0,
+    layout: str = "kamada_kawai",
 ) -> None:
     """
     Draws the MultiDiGraph H in TikZ and uses name for the naming and path to save the file.
@@ -120,6 +121,9 @@ def export_to_tikz(
         scale:
             scaling factor passed to ``compute_coordinates`` to control
             node spacing in the output.
+        layout:
+            layout algorithm passed to ``compute_coordinates``. One of
+            ``'dot'``, ``'spring'`` or ``'kamada_kawai'``.
     OUTPUT:
         No output inside of python.
         However, the file in path will be written to.
@@ -133,7 +137,7 @@ def export_to_tikz(
 
     # Get the coordinates where the nodes shall be drawn.  We compute the layout
     # on the filtered graph ``G`` to ignore isolated nodes entirely.
-    pos = compute_coordinates(G, 'kamada_kawai', k=scale)
+    pos = compute_coordinates(G, layout, k=scale)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write("\\begin{tikzpicture}\n")

@@ -115,6 +115,8 @@ To inspect the reference DAG you can generate TikZ graphs by passing
 `--draw-collapsed-sections`.
 Nodes that have no incoming or outgoing edges are omitted from these graphs
 to keep the drawings concise.
+The appearance of the graphs can be customised via `--layout` which accepts
+`dot`, `spring`, or `kamada_kawai` (the default).
 
 ### 📝 Feedback and Contributions
 
