@@ -177,6 +177,9 @@ def parse_refs(
                     # Once we find a label that comes after the reference, stop
                     break
             if src_label and target_label.split(':', 1)[0] not in excluded_types:
+                # Skip self-references since they don't create ordering
+                if src_label == target_label:
+                    continue
                 if is_future:
                     future_edges.append((src_label, target_label))
                 else:
