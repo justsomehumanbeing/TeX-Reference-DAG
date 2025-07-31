@@ -45,8 +45,9 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
                     e.g. "lem:foo" -> (1, 5)
     """
     label_to_num: Dict[str, Tuple[int, ...]] = {}
-    # Regex to look for '\newlabel{LABEL}{{NUMBERS}'
-    pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)\}")
+    # Regex to look for '\newlabel{LABEL}{{NUMBERS}{...}' and capture the first
+    # number token. Letters may appear after the digits (e.g. '1a' or '2.3b').
+    pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([^}]*)\}\{")
 
     # Read the file line by line
     try:
@@ -59,8 +60,15 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
                 label = match.group(1)
                 # get the NUMBERS part of the match with '\newlabel{LABEL}{{NUMBERS}'
                 num_str = match.group(2)
-                # Split "1.5.2" -> ["1","5","2"] and convert to ints
-                nums = tuple(int(n) for n in num_str.split('.'))
+                # Split "1.5.2a" -> ["1", "5", "2a"] and convert to ints by
+                # ignoring trailing letters (e.g. '2a' -> 2).
+                nums = []
+                for part in num_str.split('.'):
+                    m = re.match(r"\d+", part)
+                    if not m:
+                        break
+                    nums.append(int(m.group()))
+                nums = tuple(nums)
             # fill up the dictionary
                 label_to_num[label] = nums
                 # Debug: print(f"Found label: {label} -> number {nums}")
@@ -473,7 +481,7 @@ def main() -> None:
     env_map = cfg.get(
         "env_map", {"thm": ["thm"], "lem": ["lem"], "def": ["defn"], "cor": ["cor"]}
     )
-    theorem_labels = cfg.get("theorem_labels", ["lem", "thm", "prop"])
+    theorem_labels = cfg.get("theorem_labels", ["lem", "thm", "prop", "cor"])
     # Step 2: parse tex files -> build edge list
     edges, future_edges = parse_refs(
         args.tex,

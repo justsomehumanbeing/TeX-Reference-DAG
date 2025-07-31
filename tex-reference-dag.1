@@ -33,6 +33,9 @@ structure.  Additional types can be excluded via the macro configuration
 file.  The same file may define an \fCenv_map\fR object mapping label
 prefixes to the environments that contain them.  References are collected
 only inside the environment of each label, ensuring correct attribution.
+Labels whose prefix is one of \fClem\fR, \fCthm\fR, \fCprop\fR or \fCcor\fR
+also include an immediately following \fCproof\fR environment in this scan so
+that dependencies mentioned there are considered.
 .SH OPTIONS
 .TP
 .B --config
@@ -40,7 +43,8 @@ JSON file providing reference macros and default flag values. Command
 line options always override the values specified here.  It can also
 include an \fCenv_map\fR section mapping label prefixes to environment
 names. If omitted, the built-in defaults (\fC\\reflem \\refdef \\refthm
-\\refcor \\ref\fR with no future reference macros and excluding types
+\\refcor \\ref\fR with no future reference macros, theorem labels
+\fClem\fR, \fCthm\fR, \fCprop\fR and \fCcor\fR, and excluding types
 \fCfig\fR and \fCeq\fR) are used.
 .TP
 .B --draw-dir
