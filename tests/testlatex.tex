@@ -1,0 +1,65 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\newtheorem{thm}{\textsc{Theorem}}[subsection]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{qu}[thm]{Question}
+\newtheorem{cor}{Corollary}[thm]
+
+\theoremstyle{definition}
+\newtheorem{sit}[thm]{Situation}
+\newtheorem{const}[thm]{Construction}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{rem}{Remark}[thm]
+\newtheorem{ex}{Example}[thm]
+
+\begin{document}
+
+\section{Start}
+
+\begin{defn}
+	\label{def:1}
+	1
+\end{defn}
+
+\begin{defn}
+	\label{def:2}
+	2
+\end{defn}
+
+\section{Middle}
+
+\begin{defn}
+	\label{def:3}
+	3
+\end{defn}
+
+\begin{defn}
+	\label{def:4}
+	4
+\end{defn}
+
+\section{End 1}
+
+\begin{cor}
+	\label{cor:back1}
+	See \ref{def:1}
+\end{cor}
+
+\section{End 2}
+
+\begin{thm}
+	\label{cor:back2}
+	See \ref{def:2}
+\end{thm}
+\begin{prop}
+	\label{prop:backcor}
+	As \ref{cor:back1} said.
+\end{prop}
+
+
+\end{document}
