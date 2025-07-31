@@ -502,15 +502,16 @@ def main() -> None:
     else:
         print("✅ No violations: numbering respects the dependency DAG.")
 
-    # Step 4: suggest a reordering
-    topo = suggest_reordering(edges, label_to_num)
-    if topo is None:
-        print("❌ The graph contains cycles; a topological sort is not possible.")
-    else:
-        print("\n💡 Suggested topological numbering (labels in dependency order):")
-        for label in topo:
-            num = label_to_num.get(label, ())
-            print(f"  – {label}: {'.'.join(map(str, num))}")
+    # Step 4: suggest a reordering (only if a violation was found)
+    if violations:
+        topo = suggest_reordering(edges, label_to_num)
+        if topo is None:
+            print("❌ The graph contains cycles; a topological sort is not possible.")
+        else:
+            print("\n💡 Suggested topological numbering (labels in dependency order):")
+            for label in topo:
+                num = label_to_num.get(label, ())
+                print(f"  – {label}: {'.'.join(map(str, num))}")
 
     if args.draw_each_section or args.draw_collapsed_sections:
         draw_section_graphs(
