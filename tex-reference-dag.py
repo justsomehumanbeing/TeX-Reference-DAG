@@ -276,6 +276,7 @@ def draw_section_graphs(
     ref_cmds: list[str],
     future_ref_cmds: list[str],
     excluded_types: list[str],
+    env_map: dict[str, list[str]] | None,
     output_dir: str,
     *,
     draw_each_section: bool = True,
@@ -304,7 +305,13 @@ def draw_section_graphs(
         for lbl, nums in parse_aux(aux_path).items()
         if lbl.split(':', 1)[0] not in excluded_types
     }
-    env_map = cfg.get('env_map', {'thm': ['thm'], 'lem': ['lem'], 'def': ['defn'], 'cor': ['cor']})
+    if env_map is None:
+        env_map = {
+            "thm": ["thm"],
+            "lem": ["lem"],
+            "def": ["defn"],
+            "cor": ["cor"],
+        }
     edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds, excluded_types, env_map)
 
     # Build full DiGraph using the numeric tuples as nodes
@@ -443,6 +450,7 @@ def main() -> None:
             ref_cmds,
             future_ref_cmds,
             excluded_types,
+            env_map,
             args.draw_dir,
             draw_each_section=args.draw_each_section,
             draw_collapsed=args.draw_collapsed_sections,
