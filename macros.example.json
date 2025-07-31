@@ -5,7 +5,7 @@
     "future_references": ["\\fref"],
     "excluded_types": ["fig", "eq"],
     "env_map": {"thm": ["thm"], "lem": ["lem"], "def": ["defn"], "cor": ["cor"]},
-    "theorem_labels": ["lem", "thm", "prop"],
+    "theorem_labels": ["lem", "thm", "prop", "cor"],
     "draw_dir": "graphs",
     "draw_each_section": false,
     "draw_collapsed_sections": false,

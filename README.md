@@ -62,7 +62,7 @@ mapping each prefix to the environment name used in the LaTeX source:
   "future_references": ["\\fref"],
   "excluded_types": ["fig", "eq"],
   "env_map": {"def": ["defn"], "thm": ["thm"]},
-  "theorem_labels": ["lem", "thm", "prop"]
+  "theorem_labels": ["lem", "thm", "prop", "cor"]
 }
 ```
 
@@ -76,7 +76,9 @@ An example configuration is provided in `macros.example.json`.
 
 If no file is given, the defaults `\\reflem`, `\\refdef`, `\\refthm`,
 `\\refcor`, and `\\ref` are used for ordinary references and no future
-reference macros are assumed.
+reference macros are assumed. Labels starting with `lem`, `thm`, `prop`, or
+`cor` also include an immediately following `proof` environment so that
+dependencies cited there are detected.
 
 > **Important:** This tool performs **no** semantic analysis.
 > It only recognizes dependencies that you have explicitly referenced.

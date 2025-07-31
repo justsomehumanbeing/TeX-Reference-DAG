@@ -47,6 +47,31 @@ See also \refthm{thm:stuff}.
                 self.assertNotEqual(e, ("thm:stuff", "def:category"))
             self.assertIn(("thm:stuff", "lem:zorn"), edges)
 
+    def test_corollary_proof_scanned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tex_path = os.path.join(tmp, "doc.tex")
+            with open(tex_path, "w", encoding="utf-8") as f:
+                f.write(
+                    r"""
+\begin{cor}
+\label{cor:quick}
+text
+\end{cor}
+\begin{proof}
+See \reflem{lem:foo}.
+\end{proof}
+"""
+                )
+            edges, _ = parse_refs(
+                [tex_path],
+                ["\\reflem"],
+                [],
+                [],
+                {"cor": ["cor"], "lem": ["lem"]},
+                ["lem", "thm", "prop", "cor"],
+            )
+            self.assertIn(("cor:quick", "lem:foo"), edges)
+
 
 if __name__ == "__main__":
     unittest.main()
