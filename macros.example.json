@@ -1,5 +1,11 @@
 {
+  "aux": "main.aux",
+  "tex": ["main.tex"],
   "references": ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"],
   "future_references": ["\\fref"],
-  "excluded_types": ["fig", "eq"]
+  "excluded_types": ["fig", "eq"],
+  "draw_dir": "graphs",
+  "draw_each_section": false,
+  "draw_collapsed_sections": false,
+  "layout": "kamada_kawai"
 }

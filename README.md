@@ -118,6 +118,11 @@ to keep the drawings concise.
 The appearance of the graphs can be customised via `--layout` which accepts
 `dot`, `spring`, or `kamada_kawai` (the default).
 
+### ⚙️ Technical Notes
+
+All command line flags can also be provided in the JSON configuration file used
+via `--config`. Values specified on the command line override those in the file.
+
 ### 📝 Feedback and Contributions
 
 Feel free to open issues or submit pull requests for improvements or new features!
