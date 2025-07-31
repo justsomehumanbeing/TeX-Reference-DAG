@@ -46,10 +46,7 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     """
     label_to_num: Dict[str, Tuple[int, ...]] = {}
     # Regex to look for '\newlabel{LABEL}{{NUMBERS}'
-    # The number component may contain letters like '2a' or '2.1b'.
-    # We capture everything up to the closing brace and later extract the
-    # leading digits of each part.
-    pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([^}]+)\}")
+    pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)\}")
 
     # Read the file line by line
     try:
@@ -62,17 +59,9 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
                 label = match.group(1)
                 # get the NUMBERS part of the match with '\newlabel{LABEL}{{NUMBERS}'
                 num_str = match.group(2)
-                # Split "1.5a" -> ["1", "5a"] and keep only the numeric prefix
-                # of each part so labels like '2a' become (2,) and '2.3b'
-                # becomes (2, 3).
-                nums_list: List[int] = []
-                for part in num_str.split("."):
-                    m = re.match(r"(\d+)", part)
-                    if m is None:
-                        break
-                    nums_list.append(int(m.group(1)))
-                nums = tuple(nums_list)
-                # fill up the dictionary
+                # Split "1.5.2" -> ["1","5","2"] and convert to ints
+                nums = tuple(int(n) for n in num_str.split('.'))
+            # fill up the dictionary
                 label_to_num[label] = nums
                 # Debug: print(f"Found label: {label} -> number {nums}")
     except OSError as exc:
