@@ -52,13 +52,16 @@ Create a small JSON file describing all macros that introduce dependencies.
 It must contain a list `references` with ordinary references and may
 optionally list `future_references` for commands that deliberately point
 forward in the document as well as `excluded_types` for label prefixes
-that should be ignored:
+that should be ignored.  If your label prefixes do not match the names of
+the corresponding environments you can additionally provide an `env_map`
+mapping each prefix to the environment name used in the LaTeX source:
 
 ```json
 {
   "references": ["\\reflem", "\\refdef", "\\ref"],
   "future_references": ["\\fref"],
-  "excluded_types": ["fig", "eq"]
+  "excluded_types": ["fig", "eq"],
+  "env_map": {"def": ["defn"], "thm": ["thm"]}
 }
 ```
 
