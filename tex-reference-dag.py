@@ -96,85 +96,130 @@ def parse_config_file(path: str) -> dict:
     return {k: v for k, v in data.items()}
 
 
+def find_refs_for_label(
+    f,
+    label: str,
+    label_pos: int,
+    ref_cmds: List[str],
+    future_ref_cmds: List[str],
+    excluded_types: List[str],
+    env_map: Dict[str, List[str]],
+) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+    """Return references originating from ``label`` in its environment.
+
+    ``f`` must be an opened file object positioned anywhere. The function
+    reads the file to locate the LaTeX environment containing ``label`` and
+    extracts all references within that environment. ``label_pos`` is the
+    offset of the ``\label`` command in the file.
+    """
+
+    f.seek(0)
+    content = f.read()
+
+    lbl_type = label.split(":", 1)[0]
+    envs = env_map.get(lbl_type, [])
+    if isinstance(envs, str):
+        envs = [envs]
+    if not envs:
+        return [], []
+
+    env_re = "|".join(re.escape(e) for e in envs)
+    begin_pattern = re.compile(r"\\begin\{(" + env_re + r")\}")
+    end_pattern = re.compile(r"\\end\{(" + env_re + r")\}")
+
+    tokens: List[Tuple[int, str, str]] = []
+    for m in begin_pattern.finditer(content):
+        tokens.append((m.start(), "begin", m.group(1)))
+    for m in end_pattern.finditer(content):
+        tokens.append((m.start(), "end", m.group(1)))
+    tokens.sort(key=lambda x: x[0])
+
+    env_start: Optional[int] = None
+    env_end: Optional[int] = None
+    stack: List[Tuple[str, int]] = []
+    for pos, typ, env in tokens:
+        if typ == "begin":
+            stack.append((env, pos))
+        else:
+            for i in range(len(stack) - 1, -1, -1):
+                if stack[i][0] == env:
+                    start = stack.pop(i)[1]
+                    end = pos + len(env) + 6
+                    if start <= label_pos <= end and env_start is None:
+                        env_start, env_end = start, end
+                    break
+
+    if env_start is None or env_end is None:
+        return [], []
+
+    edges: List[Tuple[str, str]] = []
+    future_edges: List[Tuple[str, str]] = []
+
+    for cmd in ref_cmds:
+        pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
+        for m in pat.finditer(content, env_start, env_end):
+            tgt = m.group(1)
+            if tgt == label or tgt.split(":", 1)[0] in excluded_types:
+                continue
+            edges.append((label, tgt))
+
+    for cmd in future_ref_cmds:
+        pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
+        for m in pat.finditer(content, env_start, env_end):
+            tgt = m.group(1)
+            if tgt == label or tgt.split(":", 1)[0] in excluded_types:
+                continue
+            future_edges.append((label, tgt))
+
+    return edges, future_edges
+
+
 def parse_refs(
     tex_paths: List[str],
     ref_cmds: List[str],
     future_ref_cmds: List[str],
     excluded_types: List[str],
+    env_map: Dict[str, List[str]],
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     r"""
-    Search all .tex files for:
-     1) \label{...} commands => position in the text + label name
-     2) reference macros (e.g. \reflem{...}) => position in the text + target label
+    Scan the given ``tex_paths`` for labels and references.
 
-    From the document order (position) determine which label appears closest before a reference.
-
-    ``excluded_types`` contains label prefixes (like ``fig`` for figures)
-    that are ignored completely.
-
-    Returns two lists of edges:
-      ``edges`` for normal references and ``future_edges`` for references
-      that intentionally point forward in the document.
+    Each label is assigned to the LaTeX environment determined by ``env_map``
+    and only references inside that environment are considered. ``excluded_types``
+    lists label prefixes that are skipped entirely.
     """
+
     edges: List[Tuple[str, str]] = []
     future_edges: List[Tuple[str, str]] = []
 
-    # Label regex: finds all \label{...}
     label_pattern = re.compile(r"\\label\{([^}]+)\}")
 
     for tex_path in tex_paths:
         try:
-            with open(tex_path, encoding='utf-8') as f:
+            with open(tex_path, encoding="utf-8") as f:
                 content = f.read()
+                labels: List[Tuple[int, str]] = []
+                for m in label_pattern.finditer(content):
+                    lbl = m.group(1)
+                    if lbl.split(":", 1)[0] in excluded_types:
+                        continue
+                    labels.append((m.start(), lbl))
+
+                for pos, lbl in labels:
+                    e, fe = find_refs_for_label(
+                        f,
+                        lbl,
+                        pos,
+                        ref_cmds,
+                        future_ref_cmds,
+                        excluded_types,
+                        env_map,
+                    )
+                    edges.extend(e)
+                    future_edges.extend(fe)
         except OSError as exc:
             print(f"Could not read {tex_path}: {exc}", file=sys.stderr)
             continue
-
-        # 1) Collect all labels with their position
-        #    .start() gives the index in the string; we store (position, label_name)
-        labels: List[Tuple[int, str]] = []
-        for m in label_pattern.finditer(content):
-            lbl = m.group(1)
-            if lbl.split(':', 1)[0] in excluded_types:
-                continue
-            labels.append((m.start(), lbl))
-        # Sort explicitly by position (not lexicographically!)
-        labels.sort(key=lambda x: x[0])
-        # Labels are now ordered as they appear in the text.
-
-        # 2) Collect all references
-        refs: List[Tuple[int, str, bool]] = []  # (position, target_label, future)
-        for cmd in ref_cmds:
-            # Build a regex for each macro: e.g. r"\\reflem\{([^}]+)\}" matches \reflem{foo}
-            pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
-            for m in pat.finditer(content):
-                refs.append((m.start(), m.group(1), False))
-        for cmd in future_ref_cmds:
-            pat = re.compile(re.escape(cmd) + r"\{([^}]+)\}")
-            for m in pat.finditer(content):
-                refs.append((m.start(), m.group(1), True))
-        # Sort by position here as well
-        refs.sort(key=lambda x: x[0])
-
-        # 3) For each reference (pos, target) find the last label before it
-        for ref_pos, target_label, is_future in refs:
-            # Look for the label with the greatest position < ref_pos
-            src_label = None
-            for label_pos, label_name in labels:
-                if label_pos < ref_pos:
-                    src_label = label_name
-                else:
-                    # Once we find a label that comes after the reference, stop
-                    break
-            if src_label and target_label.split(':', 1)[0] not in excluded_types:
-                # Skip self-references since they don't create ordering
-                if src_label == target_label:
-                    continue
-                if is_future:
-                    future_edges.append((src_label, target_label))
-                else:
-                    edges.append((src_label, target_label))
-                # Debug: print(f"Edge: {src_label} -> {target_label}")
 
     return edges, future_edges
 
@@ -259,7 +304,8 @@ def draw_section_graphs(
         for lbl, nums in parse_aux(aux_path).items()
         if lbl.split(':', 1)[0] not in excluded_types
     }
-    edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds, excluded_types)
+    env_map = cfg.get('env_map', {'thm': ['thm'], 'lem': ['lem'], 'def': ['defn'], 'cor': ['cor']})
+    edges, _ = parse_refs(tex_paths, ref_cmds, future_ref_cmds, excluded_types, env_map)
 
     # Build full DiGraph using the numeric tuples as nodes
     full_G = nx.DiGraph()
@@ -358,8 +404,9 @@ def main() -> None:
     future_ref_cmds = cfg.get('future_references', [])
     excluded_types = cfg.get('excluded_types', ['fig', 'eq'])
 
+    env_map = cfg.get('env_map', {'thm': ['thm'], 'lem': ['lem'], 'def': ['defn'], 'cor': ['cor']})
     # Step 2: parse tex files -> build edge list
-    edges, future_edges = parse_refs(args.tex, ref_cmds, future_ref_cmds, excluded_types)
+    edges, future_edges = parse_refs(args.tex, ref_cmds, future_ref_cmds, excluded_types, env_map)
 
     # Step 3: check for violations
     label_to_num = {

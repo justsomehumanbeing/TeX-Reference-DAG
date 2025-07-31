@@ -27,7 +27,7 @@ class TestSelfReference(unittest.TestCase):
 
             label_to_num = parse_aux(aux_path)
             edges, future_edges = parse_refs(
-                [tex_path], ["\\reflem"], [], []
+                [tex_path], ["\\reflem"], [], [], {"lem": ["lem"]}
             )
 
             self.assertEqual(edges, [])

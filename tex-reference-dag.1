@@ -30,14 +30,18 @@ Labels should follow the form \fC\\label{<type>:<name>}\fR, e.g.
 \fC\\label{lem:zorn}\fR.  Entries with types \fCfig\fR and \fCeq\fR are
 ignored by default because their counters are independent of the section
 structure.  Additional types can be excluded via the macro configuration
-file.
+file.  The same file may define an \fCenv_map\fR object mapping label
+prefixes to the environments that contain them.  References are collected
+only inside the environment of each label, ensuring correct attribution.
 .SH OPTIONS
 .TP
 .B --config
 JSON file providing reference macros and default flag values. Command
-line options always override the values specified here. If omitted, the
-built-in defaults (\fC\\reflem \\refdef \\refthm \\refcor \\ref\fR with no
-future reference macros and excluding types \fCfig\fR and \fCeq\fR) are used.
+line options always override the values specified here.  It can also
+include an \fCenv_map\fR section mapping label prefixes to environment
+names. If omitted, the built-in defaults (\fC\\reflem \\refdef \\refthm
+\\refcor \\ref\fR with no future reference macros and excluding types
+\fCfig\fR and \fCeq\fR) are used.
 .TP
 .B --draw-dir
 Directory where TikZ graphs are written (default: \fCgraphs\fR).

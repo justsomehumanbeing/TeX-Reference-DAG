@@ -4,6 +4,12 @@
   "references": ["\\reflem", "\\refdef", "\\refthm", "\\refcor", "\\ref"],
   "future_references": ["\\fref"],
   "excluded_types": ["fig", "eq"],
+  "env_map": {
+    "thm": ["thm"],
+    "lem": ["lem"],
+    "def": ["defn"],
+    "cor": ["cor"]
+  },
   "draw_dir": "graphs",
   "draw_each_section": false,
   "draw_collapsed_sections": false,
