@@ -22,9 +22,15 @@ This ensures your mathematical documents respect logical coherence, significantl
 Tex-Reference-DAG requires:
 
 * **Python 3.x**
-* **NetworkX** (`pip install networkx`)
+* **NetworkX**
+* **pydot**
+* **pygraphviz**
+* **numpy**
+* **scipy**
+* **Graphviz** (system package)
 
-No further external dependencies are required.
+All Python modules are available via `pip`. Alternatively, the provided
+`shell.nix` sets up a Nix development shell with everything preinstalled.
 
 ---
 
