@@ -242,6 +242,7 @@ def draw_section_graphs(
     *,
     draw_each_section: bool = True,
     draw_collapsed: bool = True,
+    layout: str = "kamada_kawai",
 ) -> None:
     """
     Draw graphs of the dependency structure.
@@ -252,6 +253,8 @@ def draw_section_graphs(
       - ``excluded_types``: label prefixes (like ``fig``) that are skipped.
       - ``draw_collapsed``: draw a DAG where each node represents a section.
       - ``draw_each_section``: draw a DAG for each individual section.
+      - ``layout``: layout algorithm for the generated TikZ graphs. One of
+        ``'dot'``, ``'spring'`` or ``'kamada_kawai'``.
     The resulting TikZ files are written into ``output_dir``.
     """
     # Prepare output directory
@@ -282,6 +285,7 @@ def draw_section_graphs(
             H_secs,
             name,
             os.path.join(output_dir, "collapsed_sections.tex"),
+            layout=layout,
         )
 
     if draw_each_section:
@@ -315,6 +319,7 @@ def draw_section_graphs(
                 sub_H,
                 name,
                 os.path.join(output_dir, filename),
+                layout=layout,
             )
 
 
@@ -341,6 +346,12 @@ def main() -> None:
         '--draw-collapsed-sections',
         action='store_true',
         help='Write a section-level DAG where nodes represent sections',
+    )
+    parser.add_argument(
+        '--layout',
+        choices=['dot', 'spring', 'kamada_kawai'],
+        default='kamada_kawai',
+        help='Layout algorithm for generated TikZ graphs',
     )
     args = parser.parse_args()
 
@@ -396,6 +407,7 @@ def main() -> None:
             args.draw_dir,
             draw_each_section=args.draw_each_section,
             draw_collapsed=args.draw_collapsed_sections,
+            layout=args.layout,
         )
 
 
