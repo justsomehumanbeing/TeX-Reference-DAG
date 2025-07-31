@@ -21,7 +21,7 @@ printed and optional TikZ graphs can be generated.
 The program first reads the \fC.aux\fR file to map every label to its
 numerical counter.  It then scans the provided \fC.tex\fR files for
 \fC\\label{...}\fR commands and for reference macros specified via a
-\fBmacro file\fR.  Each reference introduces a directed edge from the closest
+\fBconfiguration file\fR.  Each reference introduces a directed edge from the closest
 preceding label to the referenced label.  NetworkX is used to analyse
 the resulting graph, detect cycles and compute a topological order.
 If a label is referenced before its number appears in this order, the
@@ -33,12 +33,11 @@ structure.  Additional types can be excluded via the macro configuration
 file.
 .SH OPTIONS
 .TP
-.B --macro-file
-JSON file describing reference macros.  It may also list
-\fCexcluded_types\fR for label prefixes that should be ignored.  If
-omitted, the program uses the built-in defaults
-\fC\\reflem \\refdef \\refthm \\refcor \\ref\fR and assumes no
-future reference macros and excludes the types \fCfig\fR and \fCeq\fR.
+.B --config
+JSON file providing reference macros and default flag values. Command
+line options always override the values specified here. If omitted, the
+built-in defaults (\fC\\reflem \\refdef \\refthm \\refcor \\ref\fR with no
+future reference macros and excluding types \fCfig\fR and \fCeq\fR) are used.
 .TP
 .B --draw-dir
 Directory where TikZ graphs are written (default: \fCgraphs\fR).
@@ -68,9 +67,9 @@ Run on a typical project after compilation:
 $ python tex-reference-dag.py main.aux *.tex
 .EE
 .TP
-Use a macro configuration file (e.g. \fCmacros.example.json\fR) and draw graphs:
+Use a configuration file (e.g. \fCmacros.example.json\fR) and draw graphs:
 .EX
-$ python tex-reference-dag.py main.aux chap*.tex --macro-file macros.json \
+$ python tex-reference-dag.py main.aux chap*.tex --config macros.json \
   --draw-dir graphs --draw-collapsed-sections --draw-each-section
 .EE
 .SH SEE ALSO

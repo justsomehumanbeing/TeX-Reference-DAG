@@ -1,10 +1,12 @@
 import os
+import sys
 import tempfile
 import unittest
 import importlib.util
 
 # Load the main module directly from its file since it is not packaged
 MODULE_PATH = os.path.join(os.path.dirname(__file__), os.pardir, "tex-reference-dag.py")
+sys.path.insert(0, os.path.dirname(MODULE_PATH))
 spec = importlib.util.spec_from_file_location("texref", MODULE_PATH)
 texref = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(texref)
