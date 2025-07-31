@@ -114,7 +114,7 @@ def find_refs_for_label(
     ``f`` must be an opened file object positioned anywhere. The function
     reads the file to locate the LaTeX environment containing ``label`` and
     extracts all references within that environment. ``label_pos`` is the
-    offset of the ``\label`` command in the file.  If ``label`` belongs to one
+    offset of the ``\\label`` command in the file.  If ``label`` belongs to one
     of ``theorem_labels``, the search area is extended to include an immediate
     ``proof`` environment following the labeled environment.
     """
