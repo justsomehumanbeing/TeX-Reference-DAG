@@ -32,7 +32,13 @@ import sys
 from typing import Dict, List, Optional, Tuple
 
 # import drawing utilities
-from draw_graphs import collapse_graph, export_to_tikz, rep_creator, name
+from draw_graphs import (
+    collapse_graph,
+    export_to_tikz,
+    rep_creator,
+    name,
+    sec_name,
+)
 
 
 def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
@@ -400,7 +406,7 @@ def draw_section_graphs(
             filename = f"section_{sec}.tex"
             export_to_tikz(
                 sub_H,
-                name,
+                sec_name,
                 os.path.join(output_dir, filename),
                 layout=layout,
                 split_components=True,

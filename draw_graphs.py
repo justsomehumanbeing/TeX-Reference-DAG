@@ -193,6 +193,16 @@ def name(t: Tuple[int, ...]) -> str:
     return "-".join(str(x) for x in t)
 
 
+def sec_name(t: Tuple[int, ...]) -> str:
+    """Return a dot-separated string skipping the first entry of ``t``.
+
+    This short form is used for graphs that depict the substructure of a single
+    section.  ``(3, 2, 5)`` becomes ``"2.5"``.
+    """
+
+    return ".".join(str(x) for x in t[1:])
+
+
 def rep_creator(level: int) -> Callable[[Tuple[int, ...]], Tuple[int, ...]]:
     """
     Erzeugt eine Funktion rep, die ein Tupel abschneidet auf die ersten `level` Einträge.
