@@ -17,6 +17,10 @@
 \newtheorem{rem}{Remark}[thm]
 \newtheorem{ex}{Example}[thm]
 
+% Simple wrappers for references used in tests
+\newcommand{\fref}[1]{\ref{#1}}
+\newcommand{\reflem}[1]{Lemma~\ref{#1}}
+
 \begin{document}
 
 \section{1}
@@ -27,8 +31,8 @@
 \end{defn}
 
 \begin{defn}
-	\label{def:2}
-	2
+        \label{def:2}
+        2, see \fref{def:4}
 \end{defn}
 
 \section{2}
@@ -39,9 +43,19 @@
 \end{defn}
 
 \begin{defn}
-	\label{def:4}
-	4
+        \label{def:4}
+        4
 \end{defn}
+
+\begin{lem}
+        \label{lem:bar}
+        Based on \ref{def:2}
+\end{lem}
+
+\begin{lem}
+        \label{lem:foo}
+        See \reflem{lem:bar}
+\end{lem}
 
 \section{3}
 
