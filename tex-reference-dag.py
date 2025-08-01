@@ -401,7 +401,7 @@ def draw_section_graphs(
                 ):
                     sub_H.add_edge(label_to_num[u_lbl], label_to_num[v_lbl])
             # Skip empty graphs
-            if sub_H.number_of_nodes() == 0:
+            if sub_H.number_of_edges() == 0:
                 continue
 
             # Export
