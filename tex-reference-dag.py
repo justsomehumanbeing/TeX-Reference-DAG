@@ -46,9 +46,8 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     """
     label_to_num: Dict[str, Tuple[int, ...]] = {}
     # Regex to look for '\newlabel{LABEL}{{NUMBERS}'
-    pattern = re.compile(
-        r"\\newlabel\{([^}]+)\}\{\{([0-9]+(?:\.[0-9]+)*)(?:[a-zA-Z]*)\}"
-    )
+    pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)[^}]*\}")
+
 
     # Read the file line by line
     try:

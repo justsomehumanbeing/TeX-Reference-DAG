@@ -17,3 +17,9 @@ Use clear Markdown formatting for each section so the structure is easy to read.
 Always think twice before you do some potentially breaking changes and rather ask for my feedback than just doing something.
 Try to keep your intervals in which you work on your own short (<10min).
 If my task is too big, please break it down first and ask me for confirmation that you just do the first step.
+
+# Pre-commit Hook
+
+This repository uses a Git pre-commit hook located in `.githooks/pre-commit`.
+It runs `./run_tests.sh` before each commit. If the tests fail, the commit will
+be aborted. Review the test output to understand the failure before retrying.
