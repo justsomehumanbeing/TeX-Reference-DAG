@@ -108,6 +108,7 @@ def export_to_tikz(
     *,
     scale: float = 10.0,
     layout: str = "kamada_kawai",
+    split_components: bool = False,
 ) -> None:
     """
     Draws the MultiDiGraph H in TikZ and uses ``name`` for node labels.
@@ -126,6 +127,10 @@ def export_to_tikz(
         layout:
             layout algorithm passed to ``compute_coordinates``. One of
             ``'dot'``, ``'spring'`` or ``'kamada_kawai'``.
+        split_components:
+            if ``True`` each weakly connected component of ``H`` is
+            drawn as a separate ``tikzpicture`` environment in the
+            same output file.
     OUTPUT:
         No output inside of python.
         However, the file in path will be written to.
@@ -137,34 +142,44 @@ def export_to_tikz(
     nodes_with_edges = [n for n in H.nodes if H.degree(n) > 0]
     G = H.subgraph(nodes_with_edges).copy()
 
-    # Get the coordinates where the nodes shall be drawn.  We compute the layout
-    # on the filtered graph ``G`` to ignore isolated nodes entirely.
-    pos = compute_coordinates(G, layout, k=scale)
+    # Determine subgraphs to draw
+    subgraphs = []
+    if split_components:
+        for comp in nx.weakly_connected_components(G):
+            sub = G.subgraph(comp).copy()
+            if sub.number_of_nodes() > 0:
+                subgraphs.append(sub)
+    else:
+        subgraphs = [G]
 
     with open(path, 'w', encoding='utf-8') as f:
-        f.write("\\begin{tikzpicture}\n")
-        # Nodes
-        for node, (x, y) in pos.items():
-            nm = name(node)
-            f.write(
-                f"  \\node[draw,circle] (\"{nm}\") at ({x:.2f},{y:.2f}) {{{nm}}};\n"
-            )
-        f.write("\n")
-        # Edges
-        seen_pairs = set()
-        for u, v in G.edges():
-            if (u, v) in seen_pairs:
-                continue
-            seen_pairs.add((u, v))
-            mult = G.number_of_edges(u, v)
-            if mult == 0:
-                continue
-            width = 1 + 0.4 * (mult - 1)
-            f.write(
-                f"  \\draw[->, line width={width:.2f}pt] "
-                f"(\"{name(u)}\") -- (\"{name(v)}\");\n"
-            )
-        f.write("\\end{tikzpicture}\n")
+        for sg in subgraphs:
+            # Get the coordinates where the nodes shall be drawn.
+            pos = compute_coordinates(sg, layout, k=scale)
+
+            f.write("\\begin{tikzpicture}\n")
+            # Nodes
+            for node, (x, y) in pos.items():
+                nm = name(node)
+                f.write(
+                    f"  \\node[draw,circle] (\"{nm}\") at ({x:.2f},{y:.2f}) {{{nm}}};\n"
+                )
+            f.write("\n")
+            # Edges
+            seen_pairs = set()
+            for u, v in sg.edges():
+                if (u, v) in seen_pairs:
+                    continue
+                seen_pairs.add((u, v))
+                mult = sg.number_of_edges(u, v)
+                if mult == 0:
+                    continue
+                width = 1 + 0.4 * (mult - 1)
+                f.write(
+                    f"  \\draw[->, line width={width:.2f}pt] "
+                    f"(\"{name(u)}\") -- (\"{name(v)}\");\n"
+                )
+            f.write("\\end{tikzpicture}\n")
     return None
 
 
