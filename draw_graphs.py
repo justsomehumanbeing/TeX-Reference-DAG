@@ -153,6 +153,7 @@ def export_to_tikz(
         subgraphs = [G]
 
     with open(path, 'w', encoding='utf-8') as f:
+        f.write("\\begin{figure}\n")
         for sg in subgraphs:
             # Get the coordinates where the nodes shall be drawn.
             pos = compute_coordinates(sg, layout, k=scale)
@@ -180,6 +181,7 @@ def export_to_tikz(
                     f"(\"{name(u)}\") -- (\"{name(v)}\");\n"
                 )
             f.write("\\end{tikzpicture}\n")
+        f.write("\\end{figure}\n")
     return None
 
 
