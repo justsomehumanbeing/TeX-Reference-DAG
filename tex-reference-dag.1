@@ -68,6 +68,23 @@ Path to the LaTeX \fC.aux\fR file.
 .TP
 .I tex-files
 One or more \fC.tex\fR files that are scanned for labels and references.
+.SH TECHNICAL NOTES
+The program first uses the given \fC.aux\fR file to find out the names of all labels.
+This only works if the latest version of the LaTeX project has been compiled (twice) already,
+as only then the correct labels are inside the \fC.aux\fR file.
+Then the program iterates through the \fC.tex\fR files and searches the labels there.
+If a label is found, its environment (and in the case of a theorem-style environment the
+following proof-environment) is searched for any references.
+The label is then linked to those references in the DAG.
+
+This process has the following important consequences:
+.IP \(BU 2
+- Only environments with labels are able to even appear in the graph
+.IP \(BU 2
+- If an environment without label references an environment (which then necessarily has a label)
+this is not visible to the program.
+
+
 .SH EXAMPLES
 .TP
 Run on a typical project after compilation:
