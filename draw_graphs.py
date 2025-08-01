@@ -109,6 +109,7 @@ def export_to_tikz(
     scale: float = 10.0,
     layout: str = "kamada_kawai",
     split_components: bool = False,
+    caption: str = None,
 ) -> None:
     """
     Draws the MultiDiGraph H in TikZ and uses ``name`` for node labels.
@@ -154,6 +155,7 @@ def export_to_tikz(
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write("\\begin{figure}\n")
+        f.write("\\centering")
         for sg in subgraphs:
             # Get the coordinates where the nodes shall be drawn.
             pos = compute_coordinates(sg, layout, k=scale)
@@ -181,6 +183,8 @@ def export_to_tikz(
                     f"(\"{name(u)}\") -- (\"{name(v)}\");\n"
                 )
             f.write("\\end{tikzpicture}\n")
+        if caption:
+            f.write(f"\\caption{{{caption}}}")
         f.write("\\end{figure}\n")
     return None
 

@@ -373,8 +373,10 @@ def draw_section_graphs(
             H_secs,
             name,
             os.path.join(output_dir, "collapsed_sections.tex"),
+            scale=2.0,
             layout=layout,
             split_components=True,
+            caption="Graph of the dependencies between the sections",
         )
 
     if draw_each_section:
@@ -408,8 +410,10 @@ def draw_section_graphs(
                 sub_H,
                 sec_name,
                 os.path.join(output_dir, filename),
+                scale=2.0,
                 layout=layout,
                 split_components=True,
+                caption=f"Graph of the dependencies within section {sec}",
             )
 
 
