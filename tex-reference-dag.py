@@ -46,7 +46,9 @@ def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     """
     label_to_num: Dict[str, Tuple[int, ...]] = {}
     # Regex to look for '\newlabel{LABEL}{{NUMBERS}'
-    pattern = re.compile(r"\\newlabel\{([^}]+)\}\{\{([\d\.]+)\}")
+    pattern = re.compile(
+        r"\\newlabel\{([^}]+)\}\{\{([0-9]+(?:\.[0-9]+)*)(?:[a-zA-Z]*)\}"
+    )
 
     # Read the file line by line
     try:
@@ -367,6 +369,7 @@ def draw_section_graphs(
             name,
             os.path.join(output_dir, "collapsed_sections.tex"),
             layout=layout,
+            split_components=True,
         )
 
     if draw_each_section:
@@ -401,6 +404,7 @@ def draw_section_graphs(
                 name,
                 os.path.join(output_dir, filename),
                 layout=layout,
+                split_components=True,
             )
 
 
