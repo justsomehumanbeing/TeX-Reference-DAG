@@ -184,7 +184,7 @@ def export_to_tikz(
                 )
             f.write("\\end{tikzpicture}\n")
         if caption:
-            f.write(f"\\caption{{{caption}}}")
+            f.write(f"\\caption{{{caption}}}\n")
         f.write("\\end{figure}\n")
     return None
 
