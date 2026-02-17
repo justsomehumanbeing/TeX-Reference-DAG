@@ -72,6 +72,40 @@ See \reflem{lem:foo}.
             )
             self.assertIn(("cor:quick", "lem:foo"), edges)
 
+    def test_comments_do_not_create_labels_refs_or_env_tokens(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tex_path = os.path.join(tmp, "doc.tex")
+            with open(tex_path, "w", encoding="utf-8") as f:
+                f.write(
+                    r"""
+% \begin{thm}
+% \label{thm:ghost}
+% See \reflem{lem:ghost}.
+% \end{thm}
+
+\begin{thm}
+\label{thm:real}
+% \reflem{lem:commented}
+See \reflem{lem:live} and escaped percent \% \reflem{lem:also-live}
+% \end{thm}
+still inside theorem.
+\end{thm}
+"""
+                )
+            edges, _ = parse_refs(
+                [tex_path],
+                ["\\reflem"],
+                [],
+                [],
+                {"thm": ["thm"], "lem": ["lem"]},
+                ["thm", "lem", "prop", "cor"],
+            )
+
+            self.assertIn(("thm:real", "lem:live"), edges)
+            self.assertIn(("thm:real", "lem:also-live"), edges)
+            self.assertNotIn(("thm:ghost", "lem:ghost"), edges)
+            self.assertNotIn(("thm:real", "lem:commented"), edges)
+
 
 if __name__ == "__main__":
     unittest.main()

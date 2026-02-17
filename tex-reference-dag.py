@@ -41,6 +41,31 @@ from draw_graphs import (
 )
 
 
+def strip_tex_comments(content: str) -> str:
+    """Remove unescaped TeX comments from ``content``.
+
+    A comment starts at ``%`` when it is not escaped by an odd number of
+    preceding backslashes and continues to the end of the line.
+    """
+
+    cleaned_lines: List[str] = []
+    for line in content.splitlines(keepends=True):
+        cut_idx = len(line)
+        for i, ch in enumerate(line):
+            if ch != "%":
+                continue
+            backslashes = 0
+            j = i - 1
+            while j >= 0 and line[j] == "\\":
+                backslashes += 1
+                j -= 1
+            if backslashes % 2 == 0:
+                cut_idx = i
+                break
+        cleaned_lines.append(line[:cut_idx])
+    return "".join(cleaned_lines)
+
+
 def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     r"""
     Read the .aux file and extract all \newlabel definitions.
@@ -127,7 +152,7 @@ def find_refs_for_label(
     """
 
     f.seek(0)
-    content = f.read()
+    content = strip_tex_comments(f.read())
 
     if theorem_labels is None:
         theorem_labels = []
@@ -228,7 +253,7 @@ def parse_refs(
     for tex_path in tex_paths:
         try:
             with open(tex_path, encoding="utf-8") as f:
-                content = f.read()
+                content = strip_tex_comments(f.read())
                 labels: List[Tuple[int, str]] = []
                 for m in label_pattern.finditer(content):
                     lbl = m.group(1)
