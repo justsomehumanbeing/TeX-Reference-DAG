@@ -41,6 +41,54 @@ from draw_graphs import (
 )
 
 
+def strip_tex_comments(content: str) -> str:
+    """Remove TeX comments while respecting inline ``\\verb`` spans.
+
+    A comment starts at ``%`` when it is not escaped by an odd number of
+    preceding backslashes. ``\\verb`` and ``\\verb*`` payloads are treated as
+    literal text so ``%`` inside them is preserved.
+    """
+
+    cleaned_lines: List[str] = []
+    for line in content.splitlines(keepends=True):
+        out_chars: List[str] = []
+        i = 0
+        n = len(line)
+        while i < n:
+            if line.startswith("\\verb", i):
+                cmd_end = i + 5
+                if cmd_end < n and line[cmd_end] == "*":
+                    cmd_end += 1
+                if cmd_end < n and line[cmd_end] not in "\r\n":
+                    delim = line[cmd_end]
+                    out_chars.append(line[i:cmd_end + 1])
+                    i = cmd_end + 1
+                    close_pos = line.find(delim, i)
+                    if close_pos == -1:
+                        out_chars.append(line[i:])
+                        i = n
+                        break
+                    out_chars.append(line[i:close_pos + 1])
+                    i = close_pos + 1
+                    continue
+
+            ch = line[i]
+            if ch == "%":
+                backslashes = 0
+                j = i - 1
+                while j >= 0 and line[j] == "\\":
+                    backslashes += 1
+                    j -= 1
+                if backslashes % 2 == 0:
+                    break
+
+            out_chars.append(ch)
+            i += 1
+
+        cleaned_lines.append("".join(out_chars))
+    return "".join(cleaned_lines)
+
+
 def parse_aux(aux_path: str) -> Dict[str, Tuple[int, ...]]:
     r"""
     Read the .aux file and extract all \newlabel definitions.
@@ -127,7 +175,7 @@ def find_refs_for_label(
     """
 
     f.seek(0)
-    content = f.read()
+    content = strip_tex_comments(f.read())
 
     if theorem_labels is None:
         theorem_labels = []
@@ -228,7 +276,7 @@ def parse_refs(
     for tex_path in tex_paths:
         try:
             with open(tex_path, encoding="utf-8") as f:
-                content = f.read()
+                content = strip_tex_comments(f.read())
                 labels: List[Tuple[int, str]] = []
                 for m in label_pattern.finditer(content):
                     lbl = m.group(1)
