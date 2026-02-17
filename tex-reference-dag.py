@@ -42,27 +42,50 @@ from draw_graphs import (
 
 
 def strip_tex_comments(content: str) -> str:
-    """Remove unescaped TeX comments from ``content``.
+    """Remove TeX comments while respecting inline ``\\verb`` spans.
 
     A comment starts at ``%`` when it is not escaped by an odd number of
-    preceding backslashes and continues to the end of the line.
+    preceding backslashes. ``\\verb`` and ``\\verb*`` payloads are treated as
+    literal text so ``%`` inside them is preserved.
     """
 
     cleaned_lines: List[str] = []
     for line in content.splitlines(keepends=True):
-        cut_idx = len(line)
-        for i, ch in enumerate(line):
-            if ch != "%":
-                continue
-            backslashes = 0
-            j = i - 1
-            while j >= 0 and line[j] == "\\":
-                backslashes += 1
-                j -= 1
-            if backslashes % 2 == 0:
-                cut_idx = i
-                break
-        cleaned_lines.append(line[:cut_idx])
+        out_chars: List[str] = []
+        i = 0
+        n = len(line)
+        while i < n:
+            if line.startswith("\\verb", i):
+                cmd_end = i + 5
+                if cmd_end < n and line[cmd_end] == "*":
+                    cmd_end += 1
+                if cmd_end < n and line[cmd_end] not in "\r\n":
+                    delim = line[cmd_end]
+                    out_chars.append(line[i:cmd_end + 1])
+                    i = cmd_end + 1
+                    close_pos = line.find(delim, i)
+                    if close_pos == -1:
+                        out_chars.append(line[i:])
+                        i = n
+                        break
+                    out_chars.append(line[i:close_pos + 1])
+                    i = close_pos + 1
+                    continue
+
+            ch = line[i]
+            if ch == "%":
+                backslashes = 0
+                j = i - 1
+                while j >= 0 and line[j] == "\\":
+                    backslashes += 1
+                    j -= 1
+                if backslashes % 2 == 0:
+                    break
+
+            out_chars.append(ch)
+            i += 1
+
+        cleaned_lines.append("".join(out_chars))
     return "".join(cleaned_lines)
 
 

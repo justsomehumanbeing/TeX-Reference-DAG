@@ -106,6 +106,29 @@ still inside theorem.
             self.assertNotIn(("thm:ghost", "lem:ghost"), edges)
             self.assertNotIn(("thm:real", "lem:commented"), edges)
 
+    def test_verb_inline_percent_does_not_hide_following_reference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tex_path = os.path.join(tmp, "doc.tex")
+            with open(tex_path, "w", encoding="utf-8") as f:
+                f.write(
+                    r"""
+\begin{thm}
+\label{thm:verb}
+Here is code \verb|a%b| then a real ref \reflem{lem:x}.
+\end{thm}
+"""
+                )
+            edges, _ = parse_refs(
+                [tex_path],
+                ["\\reflem"],
+                [],
+                [],
+                {"thm": ["thm"], "lem": ["lem"]},
+                ["thm", "lem", "prop", "cor"],
+            )
+
+            self.assertIn(("thm:verb", "lem:x"), edges)
+
 
 if __name__ == "__main__":
     unittest.main()
