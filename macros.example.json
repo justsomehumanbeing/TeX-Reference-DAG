@@ -9,5 +9,5 @@
     "draw_dir": "graphs",
     "draw_each_section": false,
     "draw_collapsed_sections": false,
-    "layout": "kamada_kawai",
+    "layout": "kamada_kawai"
 }
