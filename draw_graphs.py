@@ -71,8 +71,10 @@ def compute_coordinates(
     """
     Compute 2D coordinates for each node in G.
     layout:
-      - 'dot'    hierarchical layout using Graphviz (requires pydot)
-      - 'spring'       force-directed layout (Fruchterman-Reingold)
+      - 'dot'         hierarchical layout using Graphviz (requires pydot)
+      - 'neato'       layout via Graphviz's neato algorithm
+      - 'sfdp'        layout via Graphviz's sfdp algorithm for large graphs
+      - 'spring'      force-directed layout (Fruchterman-Reingold)
       - 'kamada_kawai' balanced layout minimizing edge lengths
 
     k:
@@ -85,6 +87,10 @@ def compute_coordinates(
         if layout == 'dot':
             # Hierarchical layout via Graphviz
             pos = nx.drawing.nx_pydot.graphviz_layout(G, prog='dot')
+        elif layout == 'neato':
+            pos = nx.drawing.nx_pydot.graphviz_layout(G, prog='neato')
+        elif layout == 'sfdp':
+            pos = nx.drawing.nx_pydot.graphviz_layout(G, prog='sfdp')
         elif layout == 'spring':
             # Classic force-directed layout
             pos = nx.spring_layout(G)
@@ -127,7 +133,7 @@ def export_to_tikz(
             node spacing in the output.
         layout:
             layout algorithm passed to ``compute_coordinates``. One of
-            ``'dot'``, ``'spring'`` or ``'kamada_kawai'``.
+            ``'dot'``, ``'neato'``, ``'sfdp'``, ``'spring'`` or ``'kamada_kawai'``.
         split_components:
             if ``True`` each weakly connected component of ``H`` is
             drawn as a separate ``tikzpicture`` environment in the

@@ -326,7 +326,7 @@ def draw_section_graphs(
       - ``draw_collapsed``: draw a DAG where each node represents a section.
       - ``draw_each_section``: draw a DAG for each individual section.
       - ``layout``: layout algorithm for the generated TikZ graphs. One of
-        ``'dot'``, ``'spring'`` or ``'kamada_kawai'``.
+        ``'dot'``, ``'neato'``, ``'sfdp'``, ``'spring'`` or ``'kamada_kawai'``.
       - ``theorem_labels``: label prefixes that should include the following
         ``proof`` block when collecting references.
     The resulting TikZ files are written into ``output_dir``.
@@ -462,7 +462,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--layout",
-        choices=["dot", "spring", "kamada_kawai"],
+        choices=["dot", "neato", "sfdp", "spring", "kamada_kawai"],
         default=cfg.get("layout", "kamada_kawai"),
         help="Layout algorithm for generated TikZ graphs",
     )
